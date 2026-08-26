@@ -63,8 +63,7 @@ export default function Home() {
     dir,
   } = useLanguage();
 
-  const isArabic =
-    language === "ar";
+  const isArabic = language === "ar";
 
   const t = {
     pharmacyName: isArabic
@@ -1112,6 +1111,51 @@ export default function Home() {
   useEffect(() => {
     let mounted = true;
 
+    async function applyUser(
+      user: NonNullable<
+        Session["user"]
+      >
+    ) {
+      if (!mounted) {
+        return;
+      }
+
+      setUserId(
+        user.id
+      );
+
+      setUserEmail(
+        user.email ??
+          null
+      );
+
+      const name =
+        user.user_metadata?.name ||
+        user.user_metadata?.full_name ||
+        null;
+
+      setUserName(
+        name
+      );
+
+      try {
+        await Promise.all([
+          loadNotifications(
+            user.id,
+            false
+          ),
+          loadQuantityChanges(
+            user.id
+          ),
+        ]);
+      } catch (error) {
+        console.error(
+          "AUTH USER DATA ERROR:",
+          error
+        );
+      }
+    }
+
     async function loadUser() {
       try {
         const {
@@ -1142,46 +1186,20 @@ export default function Home() {
           return;
         }
 
-        if (!user) {
+        if (user) {
+          await applyUser(
+            user
+          );
+        } else {
           setUserId(null);
           setUserEmail(null);
           setUserName(null);
           setNotifications([]);
           setQuantityChanges([]);
-
-          return;
         }
-
-        setUserId(
-          user.id
-        );
-
-        setUserEmail(
-          user.email ??
-            null
-        );
-
-        const name =
-          user.user_metadata?.name ||
-          user.user_metadata?.full_name ||
-          null;
-
-        setUserName(
-          name
-        );
-
-        await Promise.all([
-          loadNotifications(
-            user.id,
-            false
-          ),
-          loadQuantityChanges(
-            user.id
-          ),
-        ]);
       } catch (error) {
         console.error(
-          "LOAD USER ERROR:",
+          "LOAD USER EXCEPTION:",
           error
         );
 
@@ -1201,8 +1219,9 @@ export default function Home() {
       }
     }
 
-    loadUser();
-    loadProducts();
+    void loadUser();
+
+    void loadProducts();
 
     const {
       data: {
@@ -1245,32 +1264,20 @@ export default function Home() {
           }
 
           if (
-            event ===
-              "SIGNED_IN" ||
-            event ===
-              "TOKEN_REFRESHED" ||
-            event ===
-              "INITIAL_SESSION"
+            session?.user
           ) {
-            if (!session?.user) {
-              return;
-            }
-
-            const user =
-              session.user;
-
             setUserId(
-              user.id
+              session.user.id
             );
 
             setUserEmail(
-              user.email ??
+              session.user.email ??
                 null
             );
 
             const name =
-              user.user_metadata?.name ||
-              user.user_metadata?.full_name ||
+              session.user.user_metadata?.name ||
+              session.user.user_metadata?.full_name ||
               null;
 
             setUserName(
@@ -1283,24 +1290,15 @@ export default function Home() {
                   return;
                 }
 
-                Promise.all([
+                void Promise.all([
                   loadNotifications(
-                    user.id,
+                    session.user.id,
                     false
                   ),
                   loadQuantityChanges(
-                    user.id
+                    session.user.id
                   ),
-                ]).catch(
-                  (
-                    error
-                  ) => {
-                    console.error(
-                      "AUTH DATA LOAD ERROR:",
-                      error
-                    );
-                  }
-                );
+                ]);
               },
               0
             );
@@ -1310,7 +1308,6 @@ export default function Home() {
 
     return () => {
       mounted = false;
-
       subscription.unsubscribe();
     };
   }, []);
@@ -1324,12 +1321,12 @@ export default function Home() {
       return;
     }
 
-    checkCustomerNotifications();
+    void checkCustomerNotifications();
 
     const interval =
       window.setInterval(
         () => {
-          checkCustomerNotifications();
+          void checkCustomerNotifications();
         },
         2000
       );
@@ -1358,14 +1355,10 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "INSERT",
-            schema:
-              "public",
-            table:
-              "notifications",
-            filter:
-              `user_id=eq.${userId}`,
+            event: "INSERT",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
           },
           async (
             payload: RealtimeNotificationPayload
@@ -1390,14 +1383,10 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "UPDATE",
-            schema:
-              "public",
-            table:
-              "notifications",
-            filter:
-              `user_id=eq.${userId}`,
+            event: "UPDATE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
           },
           async () => {
             await loadNotifications(
@@ -1409,14 +1398,10 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "DELETE",
-            schema:
-              "public",
-            table:
-              "notifications",
-            filter:
-              `user_id=eq.${userId}`,
+            event: "DELETE",
+            schema: "public",
+            table: "notifications",
+            filter: `user_id=eq.${userId}`,
           },
           async () => {
             await loadNotifications(
@@ -1428,12 +1413,9 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "*",
-            schema:
-              "public",
-            table:
-              "order_quantity_changes",
+            event: "*",
+            schema: "public",
+            table: "order_quantity_changes",
           },
           async () => {
             await loadQuantityChanges(
@@ -1444,14 +1426,10 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "*",
-            schema:
-              "public",
-            table:
-              "orders",
-            filter:
-              `user_id=eq.${userId}`,
+            event: "*",
+            schema: "public",
+            table: "orders",
+            filter: `user_id=eq.${userId}`,
           },
           async () => {
             await checkCustomerNotifications();
@@ -1464,19 +1442,18 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event:
-              "*",
-            schema:
-              "public",
-            table:
-              "products",
+            event: "*",
+            schema: "public",
+            table: "products",
           },
           async () => {
             await loadProducts();
           }
         )
         .subscribe(
-          (status: string) => {
+          (
+            status: string
+          ) => {
             console.log(
               "CUSTOMER REALTIME STATUS:",
               status
@@ -1653,7 +1630,8 @@ export default function Home() {
             notification: Notification
           ) => ({
             ...notification,
-            is_read: true,
+            is_read:
+              true,
           })
         )
     );
@@ -2464,17 +2442,11 @@ export default function Home() {
       }
     );
 
-  function openCheckout() {
-    if (!userId) {
-      alert(
-        isArabic
-          ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
-          : "You must log in first to complete the order."
-      );
+  // =====================================================
+  // فتح checkout
+  // =====================================================
 
-      return;
-    }
-
+  async function openCheckout() {
     if (!cart.length) {
       alert(
         isArabic
@@ -2485,14 +2457,66 @@ export default function Home() {
       return;
     }
 
-    setCartOpen(
-      false
-    );
+    try {
+      const {
+        data: {
+          user,
+        },
+        error,
+      } =
+        await supabase.auth.getUser();
 
-    setCheckoutOpen(
-      true
-    );
+      if (error) {
+        console.error(
+          "CHECKOUT AUTH ERROR:",
+          error
+        );
+      }
+
+      if (!user) {
+        alert(
+          isArabic
+            ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
+            : "You must log in first to complete the order."
+        );
+
+        return;
+      }
+
+      // تحديث الحالة المحلية لو كانت متأخرة
+      setUserId(
+        user.id
+      );
+
+      setUserEmail(
+        user.email ??
+          null
+      );
+
+      setCartOpen(
+        false
+      );
+
+      setCheckoutOpen(
+        true
+      );
+    } catch (error) {
+      console.error(
+        "OPEN CHECKOUT ERROR:",
+        error
+      );
+
+      alert(
+        isArabic
+          ? "تعذر التحقق من تسجيل الدخول. حاول مرة أخرى."
+          : "Unable to verify your login. Please try again."
+      );
+    }
   }
+
+  // =====================================================
+  // تأكيد الطلب
+  // =====================================================
 
   async function confirmOrder() {
     if (ordering) {
@@ -2528,26 +2552,58 @@ export default function Home() {
     );
 
     try {
-      const {
+      // =================================================
+      // نتحقق من المستخدم الحقيقي من Supabase
+      // بدل الاعتماد على userId الخاص بالـState
+      // =================================================
+
+      let {
         data: {
           user,
         },
       } =
         await supabase.auth.getUser();
 
+      // محاولة إضافية للحصول على Session
+      // إذا كان الـtoken يحتاج لحظة بسيطة
       if (!user) {
-        alert(
-          isArabic
-            ? "يجب تسجيل الدخول أولاً لإتمام الطلب"
-            : "You must log in first to complete the order."
+        const {
+          data: {
+            session,
+          },
+        } =
+          await supabase.auth.getSession();
+
+        if (session?.user) {
+          user =
+            session.user;
+        }
+      }
+
+      if (!user) {
+        setOrdering(
+          false
         );
 
-        setCheckoutOpen(
-          false
+        alert(
+          isArabic
+            ? "جلسة تسجيل الدخول غير متاحة حاليًا. أعد فتح الصفحة ثم حاول مرة أخرى."
+            : "Your login session is not available right now. Reload the page and try again."
         );
 
         return;
       }
+
+      // مهم جدًا:
+      // تحديث الـstate قبل تكملة الطلب
+      setUserId(
+        user.id
+      );
+
+      setUserEmail(
+        user.email ??
+          null
+      );
 
       const productIds =
         cart.map(
@@ -2574,6 +2630,11 @@ export default function Home() {
           );
 
       if (stockError) {
+        console.error(
+          "STOCK CHECK ERROR:",
+          stockError
+        );
+
         alert(
           isArabic
             ? "حدث خطأ أثناء التأكد من المخزون."
@@ -2583,11 +2644,21 @@ export default function Home() {
         return;
       }
 
+      if (!latestProducts) {
+        alert(
+          isArabic
+            ? "تعذر تحميل بيانات المنتجات."
+            : "Unable to load product data."
+        );
+
+        return;
+      }
+
       for (
         const cartItem of cart
       ) {
         const latest =
-          latestProducts?.find(
+          latestProducts.find(
             (
               product: Product
             ) =>
@@ -2601,6 +2672,8 @@ export default function Home() {
               ? `المنتج "${cartItem.name_ar}" لم يعد موجودًا.`
               : `The product "${cartItem.name_en || cartItem.name_ar}" is no longer available.`
           );
+
+          await loadProducts();
 
           return;
         }
@@ -2620,6 +2693,10 @@ export default function Home() {
           return;
         }
       }
+
+      // =================================================
+      // إنشاء الطلب
+      // =================================================
 
       const {
         data: order,
@@ -2651,6 +2728,11 @@ export default function Home() {
           .single();
 
       if (orderError) {
+        console.error(
+          "CREATE ORDER ERROR:",
+          orderError
+        );
+
         alert(
           isArabic
             ? "حدث خطأ أثناء إنشاء الطلب:\n\n" +
@@ -2672,6 +2754,10 @@ export default function Home() {
         return;
       }
 
+      // =================================================
+      // تفاصيل الطلب
+      // =================================================
+
       const orderItems =
         cart.map(
           (
@@ -2681,18 +2767,27 @@ export default function Home() {
               order.id,
             product_id:
               item.id,
+
+            // نحافظ على الاسم العربي في قاعدة البيانات
+            // حتى يظل الاسم الأصلي محفوظًا
             product_name:
               item.name_ar,
+
             price:
               item.price,
+
             requested_quantity:
               item.quantity,
+
             approved_quantity:
               item.quantity,
+
             quantity:
               item.quantity,
+
             customer_approval:
               null,
+
             approval_message:
               null,
           })
@@ -2711,6 +2806,11 @@ export default function Home() {
           );
 
       if (itemsError) {
+        console.error(
+          "CREATE ORDER ITEMS ERROR:",
+          itemsError
+        );
+
         alert(
           isArabic
             ? "حدث خطأ في حفظ تفاصيل المنتجات:\n\n" +
@@ -2719,6 +2819,7 @@ export default function Home() {
                 itemsError.message
         );
 
+        // محاولة حذف الطلب الفارغ
         await supabase
           .from("orders")
           .delete()
@@ -2734,9 +2835,23 @@ export default function Home() {
         return;
       }
 
+      // =================================================
+      // نجاح الطلب
+      // =================================================
+
+      const orderCustomerName =
+        customerName.trim();
+
+      const orderTotal =
+        cartTotal;
+
       setCart([]);
 
       setCheckoutOpen(
+        false
+      );
+
+      setCartOpen(
         false
       );
 
@@ -2748,22 +2863,22 @@ export default function Home() {
       alert(
         isArabic
           ? "تم استلام طلبك بنجاح يا " +
-              customerName.trim() +
+              orderCustomerName +
               " 🎉\n\n" +
               "رقم الطلب: " +
               order.id +
               "\n" +
               "الإجمالي: " +
-              cartTotal +
+              orderTotal +
               " جنيه"
           : "Your order was received successfully, " +
-              customerName.trim() +
+              orderCustomerName +
               " 🎉\n\n" +
               "Order number: " +
               order.id +
               "\n" +
               "Total: " +
-              cartTotal +
+              orderTotal +
               " EGP"
       );
 
@@ -2776,8 +2891,8 @@ export default function Home() {
 
       alert(
         isArabic
-          ? "حدث خطأ غير متوقع."
-          : "An unexpected error occurred."
+          ? "حدث خطأ غير متوقع أثناء إرسال الطلب."
+          : "An unexpected error occurred while sending the order."
       );
     } finally {
       setOrdering(
@@ -2787,7 +2902,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // Loading
+  // Loading المنتجات
   // =====================================================
 
   if (productsLoading) {
@@ -2818,7 +2933,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // Products Error
+  // خطأ المنتجات
   // =====================================================
 
   if (productsError) {
@@ -2969,67 +3084,71 @@ export default function Home() {
               }
             </button>
 
-            {loadingUser ? (
-              <div className="rounded-lg border px-4 py-2 text-sm text-gray-500">
-                {t.loading}
-              </div>
-            ) : userEmail ? (
-              <>
-                <a
-                  href="/orders"
-                  className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700"
-                >
+            {
+              loadingUser ? (
+                <div className="rounded-lg border px-4 py-2 text-sm text-gray-500">
                   {
-                    t.myOrders
+                    t.loading
+                  }
+                </div>
+              ) : userEmail ? (
+                <>
+                  <a
+                    href="/orders"
+                    className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700"
+                  >
+                    {
+                      t.myOrders
+                    }
+                  </a>
+
+                  <button
+                    onClick={() =>
+                      setNotificationsOpen(
+                        true
+                      )
+                    }
+                    className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600"
+                  >
+                    {
+                      t.notifications
+                    }
+
+                    {
+                      unreadNotifications >
+                        0 && (
+                        <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                          {
+                            unreadNotifications
+                          }
+                        </span>
+                      )
+                    }
+                  </button>
+
+                  <button
+                    onClick={
+                      handleLogout
+                    }
+                    className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600"
+                  >
+                    {
+                      t.logout
+                    }
+                  </button>
+                </>
+              ) : (
+                <a
+                  href="/login"
+                  className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
+                >
+                  👤{" "}
+                  {
+                    t.login
                   }
                 </a>
-
-                <button
-                  onClick={() =>
-                    setNotificationsOpen(
-                      true
-                    )
-                  }
-                  className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600"
-                >
-                  {
-                    t.notifications
-                  }
-
-                  {
-                    unreadNotifications >
-                      0 && (
-                      <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                        {
-                          unreadNotifications
-                        }
-                      </span>
-                    )
-                  }
-                </button>
-
-                <button
-                  onClick={
-                    handleLogout
-                  }
-                  className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600"
-                >
-                  {
-                    t.logout
-                  }
-                </button>
-              </>
-            ) : (
-              <a
-                href="/login"
-                className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
-              >
-                👤{" "}
-                {
-                  t.login
-                }
-              </a>
-            )}
+              )
+            }
 
             <button
               onClick={() =>
@@ -3064,7 +3183,9 @@ export default function Home() {
 
       <section className="w-full bg-green-700 px-4 py-10 text-center text-white">
         <h2 className="text-3xl font-bold sm:text-4xl">
-          {t.welcome}
+          {
+            t.welcome
+          }
         </h2>
 
         <p className="mx-auto mt-4 max-w-2xl text-green-100">
