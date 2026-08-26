@@ -248,9 +248,7 @@ export default function Home() {
   // =====================================================
   // تحميل المستخدم مرة واحدة
   //
-  // مهم:
   // لا يوجد onAuthStateChange هنا.
-  // الصفحة الرئيسية لا تتدخل في refresh الخاص بـAuth.
   // =====================================================
 
   useEffect(() => {
@@ -1448,7 +1446,7 @@ export default function Home() {
     return (
       <main
         dir="rtl"
-        className="flex min-h-screen items-center justify-center bg-gray-50 px-6"
+        className="flex min-h-[100dvh] w-full items-center justify-center overflow-x-hidden bg-gray-50 px-4"
       >
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <div className="text-6xl">
@@ -1479,9 +1477,9 @@ export default function Home() {
     return (
       <main
         dir="rtl"
-        className="flex min-h-screen items-center justify-center bg-gray-50 px-6"
+        className="flex min-h-[100dvh] w-full items-center justify-center overflow-x-hidden bg-gray-50 px-4"
       >
-        <div className="w-full max-w-lg rounded-2xl bg-white p-8 text-center shadow-lg">
+        <div className="w-full max-w-lg rounded-2xl bg-white p-6 text-center shadow-lg sm:p-8">
           <div className="text-6xl">
             ⚠️
           </div>
@@ -1496,7 +1494,7 @@ export default function Home() {
 
           <div
             dir="ltr"
-            className="mt-5 rounded-xl bg-red-50 p-4 text-left text-sm text-red-700"
+            className="mt-5 max-w-full overflow-x-auto rounded-xl bg-red-50 p-4 text-left text-sm text-red-700"
           >
             {productsError}
           </div>
@@ -1517,13 +1515,13 @@ export default function Home() {
   return (
     <main
       dir="rtl"
-      className="min-h-screen bg-gray-50"
+      className="min-h-[100dvh] w-full overflow-x-hidden bg-gray-50"
     >
       {/* ================= HEADER ================= */}
 
-      <header className="bg-white shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
-          <div>
+      <header className="w-full bg-white shadow-sm">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6 sm:py-5">
+          <div className="text-center sm:text-right">
             <h1 className="text-2xl font-bold text-green-700">
               صيدلية الشفاء
             </h1>
@@ -1533,16 +1531,16 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
             {loadingUser ? (
-              <div className="rounded-lg border px-5 py-2 text-gray-400">
+              <div className="rounded-lg border px-4 py-2 text-sm text-gray-400">
                 جاري التحميل...
               </div>
             ) : userEmail ? (
-              <div className="flex items-center gap-2">
+              <>
                 <a
                   href="/orders"
-                  className="rounded-lg border border-green-600 px-4 py-2 font-semibold text-green-700 hover:bg-green-50"
+                  className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700 hover:bg-green-50 sm:px-4"
                 >
                   📦 طلباتي
                 </a>
@@ -1553,7 +1551,7 @@ export default function Home() {
                       true
                     )
                   }
-                  className="relative rounded-lg border border-blue-500 px-4 py-2 text-blue-600 hover:bg-blue-50"
+                  className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600 hover:bg-blue-50 sm:px-4"
                 >
                   🔔 الإشعارات
 
@@ -1582,15 +1580,15 @@ export default function Home() {
                   onClick={
                     handleLogout
                   }
-                  className="rounded-lg border border-red-500 px-4 py-2 font-semibold text-red-600 hover:bg-red-50"
+                  className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 sm:px-4"
                 >
                   تسجيل الخروج
                 </button>
-              </div>
+              </>
             ) : (
               <a
                 href="/login"
-                className="rounded-lg border border-green-600 px-5 py-2 font-semibold text-green-700 hover:bg-green-50"
+                className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700 hover:bg-green-50"
               >
                 👤 تسجيل الدخول
               </a>
@@ -1600,13 +1598,13 @@ export default function Home() {
               onClick={() =>
                 setCartOpen(true)
               }
-              className="relative rounded-lg bg-green-600 px-5 py-2 text-white hover:bg-green-700"
+              className="relative rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700 sm:px-5"
             >
               🛒 السلة
 
               {cartCount >
                 0 && (
-                <span className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-bold">
+                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold">
                   {
                     cartCount
                   }
@@ -1619,21 +1617,19 @@ export default function Home() {
 
       {/* ================= HERO ================= */}
 
-      <section className="bg-green-700 px-6 py-16 text-center text-white">
-        <h2 className="text-4xl font-bold">
+      <section className="w-full overflow-hidden bg-green-700 px-4 py-10 text-center text-white sm:px-6 sm:py-16">
+        <h2 className="text-3xl font-bold sm:text-4xl">
           أهلاً بك في صيدلية الشفاء 💚
         </h2>
 
-        <p className="mx-auto mt-4 max-w-2xl text-lg text-green-100">
+        <p className="mx-auto mt-4 max-w-2xl text-base text-green-100 sm:text-lg">
           اطلب أدويتك ومنتجاتك الصحية بسهولة وأمان
         </p>
 
-        <div className="mx-auto mt-8 flex max-w-2xl overflow-hidden rounded-xl bg-white shadow-lg">
+        <div className="mx-auto mt-8 flex w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-lg">
           <input
             type="text"
-            value={
-              search
-            }
+            value={search}
             onChange={(
               e
             ) =>
@@ -1642,10 +1638,10 @@ export default function Home() {
               )
             }
             placeholder="ابحث عن دواء أو منتج..."
-            className="flex-1 px-5 py-4 text-right text-gray-900 placeholder-gray-400 outline-none"
+            className="min-w-0 flex-1 px-4 py-3 text-right text-sm text-gray-900 placeholder-gray-400 outline-none sm:px-5 sm:py-4 sm:text-base"
           />
 
-          <button className="bg-green-600 px-7 font-semibold text-white hover:bg-green-800">
+          <button className="shrink-0 bg-green-600 px-4 py-3 text-sm font-semibold text-white hover:bg-green-800 sm:px-7 sm:py-4 sm:text-base">
             بحث 🔎
           </button>
         </div>
@@ -1654,15 +1650,15 @@ export default function Home() {
       {/* ================= NOTIFICATIONS ================= */}
 
       {notificationsOpen && (
-        <div className="fixed inset-0 z-[100] bg-black/60 p-4">
-          <div className="mx-auto mt-10 max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl">
-            <div className="sticky top-0 flex items-center justify-between border-b bg-white p-5">
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">
+        <div className="fixed inset-0 z-[100] h-[100dvh] w-screen overflow-hidden bg-black/60 p-3 sm:p-4">
+          <div className="mx-auto mt-4 flex max-h-[calc(100dvh-2rem)] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl sm:mt-10">
+            <div className="flex shrink-0 items-center justify-between border-b bg-white p-4 sm:p-5">
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">
                   🔔 الإشعارات
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-xs text-gray-500 sm:text-sm">
                   تحديثات طلباتك وتعديلات الكميات
                 </p>
               </div>
@@ -1673,20 +1669,20 @@ export default function Home() {
                     false
                   )
                 }
-                className="text-2xl text-gray-500 hover:text-red-500"
+                className="shrink-0 text-2xl text-gray-500 hover:text-red-500"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-5">
               {notificationsLoading ? (
                 <div className="py-10 text-center font-bold text-green-700">
                   جاري تحميل الإشعارات...
                 </div>
               ) : notifications.length ===
                 0 ? (
-                <div className="rounded-xl bg-gray-50 p-10 text-center">
+                <div className="rounded-xl bg-gray-50 p-8 text-center sm:p-10">
                   <div className="text-5xl">
                     🔕
                   </div>
@@ -1734,14 +1730,14 @@ export default function Home() {
                               notification.id
                             )
                           }
-                          className={`rounded-xl border-2 p-4 ${
+                          className={`rounded-xl border-2 p-3 sm:p-4 ${
                             notification.is_read
                               ? "border-gray-200 bg-white"
                               : "border-blue-300 bg-blue-50"
                           }`}
                         >
                           <div className="flex items-start gap-3">
-                            <div className="text-2xl">
+                            <div className="shrink-0 text-2xl">
                               {isQuantityNotification
                                 ? "📦"
                                 : isOrderStatusNotification
@@ -1749,22 +1745,22 @@ export default function Home() {
                                 : "🔔"}
                             </div>
 
-                            <div className="flex-1">
+                            <div className="min-w-0 flex-1">
                               <div className="flex items-start justify-between gap-3">
-                                <h3 className="font-bold text-gray-800">
+                                <h3 className="break-words font-bold text-gray-800">
                                   {
                                     notification.title
                                   }
                                 </h3>
 
                                 {!notification.is_read && (
-                                  <span className="rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white">
+                                  <span className="shrink-0 rounded-full bg-red-500 px-2 py-1 text-xs font-bold text-white">
                                     جديد
                                   </span>
                                 )}
                               </div>
 
-                              <p className="mt-2 text-gray-600">
+                              <p className="mt-2 break-words text-sm text-gray-600 sm:text-base">
                                 {
                                   notification.message
                                 }
@@ -1783,7 +1779,7 @@ export default function Home() {
                                 relatedChange.status ===
                                   "pending" && (
                                   <div
-                                    className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-4"
+                                    className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-3 sm:p-4"
                                     onClick={(
                                       e
                                     ) =>
@@ -1794,13 +1790,13 @@ export default function Home() {
                                       ⚠️ مطلوب موافقتك
                                     </p>
 
-                                    <div className="mt-3 grid grid-cols-2 gap-3">
+                                    <div className="mt-3 grid grid-cols-2 gap-2 sm:gap-3">
                                       <div className="rounded-lg bg-white p-3 text-center">
                                         <p className="text-xs text-gray-500">
                                           الكمية الأصلية
                                         </p>
 
-                                        <p className="mt-1 text-2xl font-black text-blue-700">
+                                        <p className="mt-1 text-xl font-black text-blue-700 sm:text-2xl">
                                           {
                                             relatedChange.old_quantity
                                           }
@@ -1812,7 +1808,7 @@ export default function Home() {
                                           الكمية المقترحة
                                         </p>
 
-                                        <p className="mt-1 text-2xl font-black text-orange-600">
+                                        <p className="mt-1 text-xl font-black text-orange-600 sm:text-2xl">
                                           {
                                             relatedChange.new_quantity
                                           }
@@ -1832,7 +1828,7 @@ export default function Home() {
                                           respondingChange ===
                                           relatedChange.id
                                         }
-                                        className="flex-1 rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="w-full flex-1 rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {respondingChange ===
                                         relatedChange.id
@@ -1851,7 +1847,7 @@ export default function Home() {
                                           respondingChange ===
                                           relatedChange.id
                                         }
-                                        className="flex-1 rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="w-full flex-1 rounded-xl bg-red-600 px-5 py-3 font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                                       >
                                         {respondingChange ===
                                         relatedChange.id
@@ -1866,7 +1862,7 @@ export default function Home() {
                                 relatedChange &&
                                 relatedChange.status ===
                                   "approved" && (
-                                  <div className="mt-4 rounded-xl border-2 border-green-300 bg-green-50 p-3 text-center font-bold text-green-700">
+                                  <div className="mt-4 rounded-xl border-2 border-green-300 bg-green-50 p-3 text-center text-sm font-bold text-green-700">
                                     ✅ تمت الموافقة على تعديل الكمية
                                   </div>
                                 )}
@@ -1875,7 +1871,7 @@ export default function Home() {
                                 relatedChange &&
                                 relatedChange.status ===
                                   "rejected" && (
-                                  <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700">
+                                  <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center text-sm font-bold text-red-700">
                                     ❌ تم رفض تعديل الكمية
                                   </div>
                                 )}
@@ -1902,7 +1898,7 @@ export default function Home() {
 
               {pendingQuantityChanges.length >
                 0 && (
-                <div className="mt-4 rounded-xl bg-orange-50 p-4 text-center font-bold text-orange-700">
+                <div className="mt-4 rounded-xl bg-orange-50 p-4 text-center text-sm font-bold text-orange-700 sm:text-base">
                   يوجد{" "}
                   {
                     pendingQuantityChanges.length
@@ -1917,64 +1913,64 @@ export default function Home() {
 
       {/* ================= CATEGORIES ================= */}
 
-      <section className="mx-auto max-w-6xl px-6 py-12">
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-800">
+      <section className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+        <h2 className="mb-8 text-center text-2xl font-bold text-gray-800 sm:text-3xl">
           أقسام الصيدلية
         </h2>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-7 text-center shadow-sm">
-            <div className="text-5xl">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
+          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+            <div className="text-4xl sm:text-5xl">
               💊
             </div>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-800">
+            <h3 className="mt-3 text-lg font-bold text-gray-800 sm:mt-4 sm:text-xl">
               الأدوية
             </h3>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               أدوية ومستلزمات علاجية
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-7 text-center shadow-sm">
-            <div className="text-5xl">
+          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+            <div className="text-4xl sm:text-5xl">
               🧴
             </div>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-800">
+            <h3 className="mt-3 text-lg font-bold text-gray-800 sm:mt-4 sm:text-xl">
               العناية بالبشرة
             </h3>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               منتجات العناية بالبشرة
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-7 text-center shadow-sm">
-            <div className="text-5xl">
+          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+            <div className="text-4xl sm:text-5xl">
               🍼
             </div>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-800">
+            <h3 className="mt-3 text-lg font-bold text-gray-800 sm:mt-4 sm:text-xl">
               الأطفال
             </h3>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               منتجات الأطفال والأمهات
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white p-7 text-center shadow-sm">
-            <div className="text-5xl">
+          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+            <div className="text-4xl sm:text-5xl">
               🩺
             </div>
 
-            <h3 className="mt-4 text-xl font-bold text-gray-800">
+            <h3 className="mt-3 text-lg font-bold text-gray-800 sm:mt-4 sm:text-xl">
               الأجهزة الطبية
             </h3>
 
-            <p className="mt-2 text-gray-500">
+            <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               أجهزة ومستلزمات طبية
             </p>
           </div>
@@ -1983,15 +1979,15 @@ export default function Home() {
 
       {/* ================= PRODUCTS ================= */}
 
-      <section className="bg-white px-6 py-12">
-        <div className="mx-auto max-w-6xl">
+      <section className="w-full bg-white px-4 py-10 sm:px-6 sm:py-12">
+        <div className="mx-auto w-full max-w-6xl">
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-gray-800">
+              <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
                 منتجات الصيدلية
               </h2>
 
-              <p className="mt-2 text-gray-500">
+              <p className="mt-2 text-sm text-gray-500">
                 المنتجات المتاحة حاليًا
               </p>
             </div>
@@ -2000,7 +1996,7 @@ export default function Home() {
               onClick={
                 loadProducts
               }
-              className="rounded-xl border border-green-600 px-5 py-2 font-bold text-green-700 hover:bg-green-50"
+              className="w-full rounded-xl border border-green-600 px-5 py-2 font-bold text-green-700 hover:bg-green-50 sm:w-auto"
             >
               🔄 تحديث المنتجات
             </button>
@@ -2022,7 +2018,7 @@ export default function Home() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
               {filteredProducts.map(
                 (
                   product
@@ -2031,9 +2027,9 @@ export default function Home() {
                     key={
                       product.id
                     }
-                    className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+                    className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:p-5"
                   >
-                    <div className="flex h-48 items-center justify-center overflow-hidden rounded-xl bg-green-50">
+                    <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl bg-green-50 sm:h-48">
                       {product.image_url ? (
                         <img
                           src={
@@ -2045,7 +2041,7 @@ export default function Home() {
                           className="h-full w-full object-contain"
                         />
                       ) : (
-                        <span className="text-7xl">
+                        <span className="text-6xl sm:text-7xl">
                           {
                             product.icon ||
                             "💊"
@@ -2054,7 +2050,7 @@ export default function Home() {
                       )}
                     </div>
 
-                    <h3 className="mt-4 text-lg font-bold text-gray-800">
+                    <h3 className="mt-3 break-words text-base font-bold text-gray-800 sm:mt-4 sm:text-lg">
                       {
                         product.name_ar
                       }
@@ -2063,7 +2059,7 @@ export default function Home() {
                     {product.name_en && (
                       <p
                         dir="ltr"
-                        className="mt-1 text-sm font-medium text-gray-400"
+                        className="mt-1 truncate text-xs font-medium text-gray-400 sm:text-sm"
                       >
                         {
                           product.name_en
@@ -2071,13 +2067,13 @@ export default function Home() {
                       </p>
                     )}
 
-                    <p className="mt-2 min-h-[48px] text-gray-500">
+                    <p className="mt-2 min-h-[40px] text-xs text-gray-500 sm:min-h-[48px] sm:text-sm">
                       {product.description ||
                         "لا يوجد وصف"}
                     </p>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-xl font-bold text-green-700">
+                    <div className="mt-3 flex flex-col gap-1 sm:mt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-0">
+                      <span className="text-base font-bold text-green-700 sm:text-xl">
                         {
                           product.price
                         }{" "}
@@ -2086,14 +2082,14 @@ export default function Home() {
 
                       {product.stock >
                       0 ? (
-                        <span className="text-sm font-bold text-gray-500">
+                        <span className="text-xs font-bold text-gray-500 sm:text-sm">
                           متوفر:{" "}
                           {
                             product.stock
                           }
                         </span>
                       ) : (
-                        <span className="text-sm font-bold text-red-600">
+                        <span className="text-xs font-bold text-red-600 sm:text-sm">
                           غير متوفر
                         </span>
                       )}
@@ -2109,7 +2105,7 @@ export default function Home() {
                         product.stock <=
                         0
                       }
-                      className="mt-4 w-full rounded-xl bg-green-600 px-4 py-3 font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                      className="mt-3 w-full rounded-xl bg-green-600 px-3 py-3 text-sm font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:mt-4 sm:text-base"
                     >
                       {product.stock >
                       0
@@ -2126,7 +2122,7 @@ export default function Home() {
 
       {/* ================= FOOTER ================= */}
 
-      <footer className="bg-gray-900 px-6 py-8 text-center text-white">
+      <footer className="w-full bg-gray-900 px-4 py-8 text-center text-white">
         <h2 className="text-xl font-bold">
           صيدلية الشفاء
         </h2>
@@ -2143,10 +2139,10 @@ export default function Home() {
       {/* ================= CART ================= */}
 
       {cartOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50">
-          <div className="absolute right-0 top-0 h-full w-full max-w-md overflow-y-auto bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b p-5">
-              <h2 className="text-2xl font-bold text-gray-800">
+        <div className="fixed inset-0 z-[200] h-[100dvh] w-screen overflow-hidden bg-black/50">
+          <div className="absolute inset-y-0 right-0 flex h-[100dvh] w-[92vw] max-w-md flex-col overflow-hidden bg-white shadow-2xl sm:w-full">
+            <div className="flex shrink-0 items-center justify-between border-b p-4 sm:p-5">
+              <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">
                 🛒 سلة المشتريات
               </h2>
 
@@ -2156,179 +2152,181 @@ export default function Home() {
                     false
                   )
                 }
-                className="text-2xl text-gray-500 hover:text-red-500"
+                className="shrink-0 text-2xl text-gray-500 hover:text-red-500"
               >
                 ✕
               </button>
             </div>
 
-            {cart.length ===
-            0 ? (
-              <div className="flex flex-col items-center justify-center p-10 text-center">
-                <div className="text-6xl">
-                  🛒
-                </div>
-
-                <h3 className="mt-5 text-xl font-bold text-gray-700">
-                  السلة فارغة
-                </h3>
-
-                <p className="mt-2 text-gray-500">
-                  أضف بعض المنتجات إلى السلة
-                </p>
-              </div>
-            ) : (
-              <div className="p-5">
-                <div className="space-y-4">
-                  {cart.map(
-                    (
-                      item
-                    ) => (
-                      <div
-                        key={
-                          item.id
-                        }
-                        className="rounded-xl border p-4"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-green-50">
-                            {item.image_url ? (
-                              <img
-                                src={
-                                  item.image_url
-                                }
-                                alt={
-                                  item.name_ar
-                                }
-                                className="h-full w-full object-contain"
-                              />
-                            ) : (
-                              <span className="text-4xl">
-                                {
-                                  item.icon ||
-                                  "💊"
-                                }
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex-1">
-                            <h3 className="font-bold text-gray-800">
-                              {
-                                item.name_ar
-                              }
-                            </h3>
-
-                            {item.name_en && (
-                              <p
-                                dir="ltr"
-                                className="mt-1 text-xs text-gray-400"
-                              >
-                                {
-                                  item.name_en
-                                }
-                              </p>
-                            )}
-
-                            <p className="mt-1 text-sm text-gray-500">
-                              {
-                                item.price
-                              }{" "}
-                              جنيه
-                            </p>
-
-                            <p className="mt-1 text-xs text-gray-400">
-                              المتاح:{" "}
-                              {
-                                item.stock
-                              }
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="mt-5 flex items-center justify-between border-t pt-4">
-                          <div>
-                            <p className="font-bold text-gray-700">
-                              الكمية:{" "}
-                              {
-                                item.quantity
-                              }
-                            </p>
-
-                            <p className="mt-1 text-sm text-gray-500">
-                              الإجمالي:{" "}
-                              {
-                                item.price *
-                                item.quantity
-                              }{" "}
-                              جنيه
-                            </p>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() =>
-                                decreaseQuantity(
-                                  item.id
-                                )
-                              }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-200 text-lg font-bold hover:bg-gray-300"
-                            >
-                              −
-                            </button>
-
-                            <span className="min-w-[30px] text-center text-lg font-bold text-gray-900">
-                              {
-                                item.quantity
-                              }
-                            </span>
-
-                            <button
-                              onClick={() =>
-                                increaseQuantity(
-                                  item.id
-                                )
-                              }
-                              disabled={
-                                item.quantity >=
-                                item.stock
-                              }
-                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-lg font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  )}
-                </div>
-
-                <div className="mt-6 rounded-xl bg-green-50 p-5">
-                  <div className="flex justify-between text-xl font-bold">
-                    <span>
-                      إجمالي السلة
-                    </span>
-
-                    <span className="text-green-700">
-                      {
-                        cartTotal
-                      }{" "}
-                      جنيه
-                    </span>
+            <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+              {cart.length ===
+              0 ? (
+                <div className="flex min-h-full flex-col items-center justify-center p-8 text-center">
+                  <div className="text-6xl">
+                    🛒
                   </div>
 
-                  <button
-                    onClick={
-                      openCheckout
-                    }
-                    className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700"
-                  >
-                    إتمام الطلب
-                  </button>
+                  <h3 className="mt-5 text-xl font-bold text-gray-700">
+                    السلة فارغة
+                  </h3>
+
+                  <p className="mt-2 text-gray-500">
+                    أضف بعض المنتجات إلى السلة
+                  </p>
                 </div>
-              </div>
-            )}
+              ) : (
+                <div className="p-4 sm:p-5">
+                  <div className="space-y-4">
+                    {cart.map(
+                      (
+                        item
+                      ) => (
+                        <div
+                          key={
+                            item.id
+                          }
+                          className="rounded-xl border p-3 sm:p-4"
+                        >
+                          <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-green-50 sm:h-16 sm:w-16">
+                              {item.image_url ? (
+                                <img
+                                  src={
+                                    item.image_url
+                                  }
+                                  alt={
+                                    item.name_ar
+                                  }
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <span className="text-3xl sm:text-4xl">
+                                  {
+                                    item.icon ||
+                                    "💊"
+                                  }
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h3 className="break-words text-sm font-bold text-gray-800 sm:text-base">
+                                {
+                                  item.name_ar
+                                }
+                              </h3>
+
+                              {item.name_en && (
+                                <p
+                                  dir="ltr"
+                                  className="mt-1 truncate text-xs text-gray-400"
+                                >
+                                  {
+                                    item.name_en
+                                  }
+                                </p>
+                              )}
+
+                              <p className="mt-1 text-sm text-gray-500">
+                                {
+                                  item.price
+                                }{" "}
+                                جنيه
+                              </p>
+
+                              <p className="mt-1 text-xs text-gray-400">
+                                المتاح:{" "}
+                                {
+                                  item.stock
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="font-bold text-gray-700">
+                                الكمية:{" "}
+                                {
+                                  item.quantity
+                                }
+                              </p>
+
+                              <p className="mt-1 text-sm text-gray-500">
+                                الإجمالي:{" "}
+                                {
+                                  item.price *
+                                  item.quantity
+                                }{" "}
+                                جنيه
+                              </p>
+                            </div>
+
+                            <div className="flex items-center justify-center gap-3">
+                              <button
+                                onClick={() =>
+                                  decreaseQuantity(
+                                    item.id
+                                  )
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-200 text-lg font-bold hover:bg-gray-300"
+                              >
+                                −
+                              </button>
+
+                              <span className="min-w-[30px] text-center text-lg font-bold text-gray-900">
+                                {
+                                  item.quantity
+                                }
+                              </span>
+
+                              <button
+                                onClick={() =>
+                                  increaseQuantity(
+                                    item.id
+                                  )
+                                }
+                                disabled={
+                                  item.quantity >=
+                                  item.stock
+                                }
+                                className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-600 text-lg font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  <div className="mt-6 rounded-xl bg-green-50 p-4 sm:p-5">
+                    <div className="flex items-center justify-between gap-3 text-lg font-bold sm:text-xl">
+                      <span>
+                        إجمالي السلة
+                      </span>
+
+                      <span className="text-green-700">
+                        {
+                          cartTotal
+                        }{" "}
+                        جنيه
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={
+                        openCheckout
+                      }
+                      className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white hover:bg-green-700"
+                    >
+                      إتمام الطلب
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -2336,10 +2334,10 @@ export default function Home() {
       {/* ================= CHECKOUT ================= */}
 
       {checkoutOpen && (
-        <div className="fixed inset-0 z-[60] overflow-y-auto bg-black/60 p-4">
-          <div className="mx-auto mt-10 w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b p-5">
-              <h2 className="text-2xl font-bold text-gray-800">
+        <div className="fixed inset-0 z-[210] h-[100dvh] w-screen overflow-y-auto overflow-x-hidden bg-black/60 p-3 sm:p-4">
+          <div className="mx-auto mt-4 w-full max-w-lg rounded-2xl bg-white shadow-2xl sm:mt-10">
+            <div className="flex items-center justify-between border-b p-4 sm:p-5">
+              <h2 className="text-xl font-bold text-gray-800 sm:text-2xl">
                 📝 بيانات الطلب
               </h2>
 
@@ -2349,13 +2347,13 @@ export default function Home() {
                     false
                   )
                 }
-                className="text-2xl text-gray-500 hover:text-red-500"
+                className="shrink-0 text-2xl text-gray-500 hover:text-red-500"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-5 p-6">
+            <div className="space-y-4 p-4 sm:space-y-5 sm:p-6">
               <div>
                 <label className="mb-2 block font-bold text-gray-700">
                   الاسم بالكامل
@@ -2375,7 +2373,8 @@ export default function Home() {
                     )
                   }
                   placeholder="اكتب اسمك"
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
+                  autoComplete="name"
+                  className="w-full min-w-0 rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
                 />
               </div>
 
@@ -2398,7 +2397,8 @@ export default function Home() {
                     )
                   }
                   placeholder="01xxxxxxxxx"
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
+                  autoComplete="tel"
+                  className="w-full min-w-0 rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
                 />
               </div>
 
@@ -2420,10 +2420,8 @@ export default function Home() {
                     )
                   }
                   placeholder="اكتب عنوان التوصيل بالتفصيل"
-                  rows={
-                    3
-                  }
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
+                  rows={3}
+                  className="w-full min-w-0 resize-y rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
                 />
               </div>
 
@@ -2445,15 +2443,13 @@ export default function Home() {
                     )
                   }
                   placeholder="أي ملاحظات إضافية..."
-                  rows={
-                    2
-                  }
-                  className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
+                  rows={2}
+                  className="w-full min-w-0 resize-y rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
                 />
               </div>
 
               <div className="rounded-xl bg-green-50 p-4">
-                <div className="flex justify-between text-lg font-bold">
+                <div className="flex items-center justify-between gap-3 text-lg font-bold">
                   <span>
                     إجمالي الطلب
                   </span>

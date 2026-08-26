@@ -9,24 +9,10 @@ export default function AdminNavigation() {
   const pathname = usePathname();
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
     let mounted = true;
-
-    // =====================================================
-    // أهم تعديل:
-    // صفحات العميل لا تحتاج أي فحص Supabase للأدمن.
-    // =====================================================
-
-    if (!pathname.startsWith("/admin")) {
-      setIsAdmin(false);
-      setCheckingAdmin(false);
-
-      return () => {
-        mounted = false;
-      };
-    }
 
     async function checkAdmin() {
       setCheckingAdmin(true);
@@ -105,55 +91,60 @@ export default function AdminNavigation() {
     };
   }, [pathname]);
 
-  // صفحات الأدمن نفسها لها شريطها الخاص
+  // صفحات الأدمن لها شريط خاص بها
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  // العميل العادي لا يرى أي شيء
-  if (checkingAdmin || !isAdmin) {
+  // أثناء الفحص لا نظهر الشريط
+  if (checkingAdmin) {
+    return null;
+  }
+
+  // العميل العادي لا يرى شريط الأدمن
+  if (!isAdmin) {
     return null;
   }
 
   return (
     <nav
       dir="rtl"
-      className="sticky top-0 z-50 border-b bg-white shadow-sm"
+      className="sticky top-0 z-50 w-full border-b bg-white shadow-sm"
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-6 py-4">
+      <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center gap-3 px-4 py-4 sm:px-6">
         <Link
           href="/admin/dashboard"
-          className="rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700"
+          className="rounded-xl bg-green-600 px-4 py-3 text-sm font-bold text-white hover:bg-green-700 sm:px-5 sm:text-base"
         >
           📊 لوحة التحكم
         </Link>
 
         <Link
           href="/admin"
-          className="rounded-xl border border-blue-600 bg-white px-5 py-3 font-bold text-blue-700 hover:bg-blue-50"
+          className="rounded-xl border border-blue-600 bg-white px-4 py-3 text-sm font-bold text-blue-700 hover:bg-blue-50 sm:px-5 sm:text-base"
         >
           🛒 الطلبات
         </Link>
 
         <Link
           href="/admin/products"
-          className="rounded-xl border border-purple-600 bg-white px-5 py-3 font-bold text-purple-700 hover:bg-purple-50"
+          className="rounded-xl border border-purple-600 bg-white px-4 py-3 text-sm font-bold text-purple-700 hover:bg-purple-50 sm:px-5 sm:text-base"
         >
-          📦 المنتجات الموجودة
+          📦 المنتجات
         </Link>
 
         <Link
           href="/admin/products/add"
-          className="rounded-xl border border-green-600 bg-white px-5 py-3 font-bold text-green-700 hover:bg-green-50"
+          className="rounded-xl border border-green-600 bg-white px-4 py-3 text-sm font-bold text-green-700 hover:bg-green-50 sm:px-5 sm:text-base"
         >
           ➕ إضافة منتج
         </Link>
 
         <Link
           href="/"
-          className="rounded-xl border border-gray-400 bg-white px-5 py-3 font-bold text-gray-700 hover:bg-gray-50"
+          className="rounded-xl border border-gray-400 bg-white px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 sm:px-5 sm:text-base"
         >
-          🏠 الصفحة الرئيسية
+          🏠 الرئيسية
         </Link>
       </div>
     </nav>
