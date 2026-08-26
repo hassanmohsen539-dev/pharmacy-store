@@ -1100,7 +1100,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // المستخدم
+  // المستخدم + متابعة جلسة Supabase
   // =====================================================
 
   useEffect(() => {
@@ -1122,6 +1122,11 @@ export default function Home() {
         }
 
         if (sessionError) {
+          console.error(
+            "LOAD SESSION ERROR:",
+            sessionError
+          );
+
           setUserId(null);
           setUserEmail(null);
           setUserName(null);
@@ -1187,8 +1192,99 @@ export default function Home() {
     loadUser();
     loadProducts();
 
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        async (
+          event,
+          session
+        ) => {
+          if (!mounted) {
+            return;
+          }
+
+          console.log(
+            "AUTH STATE CHANGE:",
+            event
+          );
+
+          if (
+            event ===
+              "SIGNED_IN" ||
+            event ===
+              "TOKEN_REFRESHED" ||
+            event ===
+              "INITIAL_SESSION"
+          ) {
+            if (session?.user) {
+              const user =
+                session.user;
+
+              setUserId(
+                user.id
+              );
+
+              setUserEmail(
+                user.email ??
+                  null
+              );
+
+              const name =
+                user.user_metadata?.name ||
+                user.user_metadata?.full_name ||
+                null;
+
+              setUserName(
+                name
+              );
+
+              try {
+                await Promise.all([
+                  loadNotifications(
+                    user.id,
+                    false
+                  ),
+                  loadQuantityChanges(
+                    user.id
+                  ),
+                ]);
+              } catch (error) {
+                console.error(
+                  "AUTH DATA LOAD ERROR:",
+                  error
+                );
+              }
+            }
+          }
+
+          if (
+            event ===
+            "SIGNED_OUT"
+          ) {
+            setUserId(null);
+            setUserEmail(null);
+            setUserName(null);
+            setNotifications([]);
+            setQuantityChanges([]);
+            setNewNotificationAlert(
+              null
+            );
+
+            lastKnownNotificationIdRef.current =
+              null;
+
+            locallyDeletedNotificationIdsRef.current.clear();
+          }
+        }
+      );
+
     return () => {
       mounted = false;
+
+      subscription.unsubscribe();
     };
   }, []);
 
@@ -2691,8 +2787,6 @@ export default function Home() {
           </div>
 
           <div className="flex w-full flex-wrap items-center justify-center gap-2 sm:w-auto sm:justify-end">
-            {/* اللغة */}
-
             <button
               type="button"
               onClick={
@@ -3251,14 +3345,22 @@ export default function Home() {
 
                     <h3 className="mt-3 font-bold text-gray-800">
                       {
-                        product.name_ar
+                        isArabic
+                          ? product.name_ar
+                          : product.name_en ||
+                            product.name_ar
                       }
                     </h3>
 
                     {product.name_en && (
-                      <p className="mt-1 text-xs text-gray-600">
+                      <p
+                        dir="ltr"
+                        className="mt-1 text-xs text-gray-600"
+                      >
                         {
-                          product.name_en
+                          isArabic
+                            ? product.name_en
+                            : product.name_ar
                         }
                       </p>
                     )}
@@ -3398,7 +3500,10 @@ export default function Home() {
                             <div className="min-w-0 flex-1">
                               <h3 className="break-words font-bold text-gray-800">
                                 {
-                                  item.name_ar
+                                  isArabic
+                                    ? item.name_ar
+                                    : item.name_en ||
+                                      item.name_ar
                                 }
                               </h3>
 
@@ -3408,7 +3513,9 @@ export default function Home() {
                                   className="mt-1 truncate text-xs text-gray-600"
                                 >
                                   {
-                                    item.name_en
+                                    isArabic
+                                      ? item.name_en
+                                      : item.name_ar
                                   }
                                 </p>
                               )}
