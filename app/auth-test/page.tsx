@@ -37,7 +37,12 @@ export default function AuthTestPage() {
   useEffect(() => {
     let mounted = true;
 
-    async function checkSession() {
+    // =====================================================
+    // فحص أولي واحد فقط
+    // لا يوجد setInterval
+    // =====================================================
+
+    async function initialCheck() {
       try {
         const {
           data: {
@@ -53,6 +58,11 @@ export default function AuthTestPage() {
         }
 
         if (sessionError) {
+          console.error(
+            "AUTH TEST INITIAL ERROR:",
+            sessionError
+          );
+
           setError(
             sessionError.message
           );
@@ -62,7 +72,7 @@ export default function AuthTestPage() {
 
         setInfo({
           event:
-            "SESSION CHECK",
+            "INITIAL SESSION",
           userId:
             session?.user?.id ||
             null,
@@ -78,13 +88,11 @@ export default function AuthTestPage() {
         });
 
         setCount(
-          (
-            value
-          ) =>
-            value + 1
+          1
         );
       } catch (err) {
         console.error(
+          "AUTH TEST INITIAL EXCEPTION:",
           err
         );
 
@@ -99,15 +107,12 @@ export default function AuthTestPage() {
       }
     }
 
-    void checkSession();
+    void initialCheck();
 
-    const timer =
-      window.setInterval(
-        () => {
-          void checkSession();
-        },
-        1000
-      );
+    // =====================================================
+    // مراقبة Auth فقط
+    // لا يوجد getSession داخل callback
+    // =====================================================
 
     const {
       data: {
@@ -144,15 +149,18 @@ export default function AuthTestPage() {
                 "ar-EG"
               ),
           });
+
+          setCount(
+            (
+              value
+            ) =>
+              value + 1
+          );
         }
       );
 
     return () => {
       mounted = false;
-
-      window.clearInterval(
-        timer
-      );
 
       subscription.unsubscribe();
     };
@@ -173,15 +181,21 @@ export default function AuthTestPage() {
         </p>
 
         <div className="mt-6 space-y-4">
+          {/* Auth Event */}
+
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
               Auth Event
             </p>
 
-            <p className="mt-1 text-blue-700">
-              {info.event}
+            <p className="mt-1 break-words text-blue-700">
+              {
+                info.event
+              }
             </p>
           </div>
+
+          {/* Session */}
 
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
@@ -201,16 +215,22 @@ export default function AuthTestPage() {
             </p>
           </div>
 
+          {/* Email */}
+
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
               Email
             </p>
 
             <p className="mt-1 break-all text-gray-700">
-              {info.email ||
-                "لا يوجد"}
+              {
+                info.email ||
+                "لا يوجد"
+              }
             </p>
           </div>
+
+          {/* User ID */}
 
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
@@ -218,31 +238,43 @@ export default function AuthTestPage() {
             </p>
 
             <p className="mt-1 break-all text-xs text-gray-700">
-              {info.userId ||
-                "لا يوجد"}
+              {
+                info.userId ||
+                "لا يوجد"
+              }
             </p>
           </div>
+
+          {/* وقت الفحص */}
 
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
-              آخر فحص
+              آخر تحديث
             </p>
 
             <p className="mt-1 text-gray-700">
-              {info.checkedAt ||
-                "—"}
+              {
+                info.checkedAt ||
+                "—"
+              }
             </p>
           </div>
+
+          {/* عدد الأحداث */}
 
           <div className="rounded-xl bg-gray-100 p-4">
             <p className="font-bold">
-              عدد مرات الفحص
+              عدد أحداث Auth
             </p>
 
             <p className="mt-1 text-gray-700">
-              {count}
+              {
+                count
+              }
             </p>
           </div>
+
+          {/* الخطأ */}
 
           {error && (
             <div className="rounded-xl bg-red-50 p-4 text-red-700">
@@ -251,10 +283,26 @@ export default function AuthTestPage() {
               </p>
 
               <p className="mt-1 break-words">
-                {error}
+                {
+                  error
+                }
               </p>
             </div>
           )}
+
+          {/* شرح */}
+
+          <div className="rounded-xl border-2 border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <p className="font-bold">
+              ملاحظة:
+            </p>
+
+            <p className="mt-2">
+              الصفحة تعمل بفحص أولي واحد
+              فقط، ثم تعتمد على أحداث
+              Supabase Auth بدون فحص متكرر.
+            </p>
+          </div>
         </div>
 
         <a

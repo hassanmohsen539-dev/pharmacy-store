@@ -1,13 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import { useLanguage } from "../language-provider";
 
 export default function LoginPage() {
-  const router = useRouter();
-
   const {
     language,
     toggleLanguage,
@@ -34,7 +31,10 @@ export default function LoginPage() {
   ) {
     e.preventDefault();
 
-    if (!email.trim() || !password) {
+    if (
+      !email.trim() ||
+      !password
+    ) {
       alert(
         isArabic
           ? "من فضلك اكتب البريد الإلكتروني وكلمة المرور"
@@ -44,7 +44,10 @@ export default function LoginPage() {
       return;
     }
 
-    if (loading || resetting) {
+    if (
+      loading ||
+      resetting
+    ) {
       return;
     }
 
@@ -56,39 +59,47 @@ export default function LoginPage() {
       // =====================================================
 
       const {
-        data: loginData,
-        error: loginError,
+        data,
+        error,
       } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
-
-      if (loginError) {
-        console.error(
-          "LOGIN ERROR:",
-          loginError
+        await supabase.auth.signInWithPassword(
+          {
+            email:
+              email.trim(),
+            password,
+          }
         );
 
-        alert(loginError.message);
+      if (error) {
+        console.error(
+          "LOGIN ERROR:",
+          error
+        );
+
+        alert(
+          error.message
+        );
 
         return;
       }
 
-      // =====================================================
-      // نتأكد أن Supabase أعادت User + Session
-      // =====================================================
-
       const user =
-        loginData.user;
+        data.user;
 
       const session =
-        loginData.session;
+        data.session;
 
-      if (!user || !session) {
+      // =====================================================
+      // التأكد من نجاح تسجيل الدخول
+      // =====================================================
+
+      if (
+        !user ||
+        !session
+      ) {
         console.error(
-          "LOGIN RESULT WITHOUT SESSION:",
-          loginData
+          "LOGIN RESULT WITHOUT USER OR SESSION:",
+          data
         );
 
         alert(
@@ -111,24 +122,36 @@ export default function LoginPage() {
       );
 
       // =====================================================
-      // فحص صلاحية الحساب
+      // فحص صلاحية الأدمن
       // =====================================================
 
-      let role: string | null =
+      let role:
+        | string
+        | null =
         null;
 
       try {
         const {
           data: profile,
-          error: profileError,
+          error:
+            profileError,
         } =
           await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", user.id)
+            .from(
+              "profiles"
+            )
+            .select(
+              "role"
+            )
+            .eq(
+              "id",
+              user.id
+            )
             .maybeSingle();
 
-        if (profileError) {
+        if (
+          profileError
+        ) {
           console.error(
             "PROFILE ERROR:",
             profileError
@@ -138,25 +161,45 @@ export default function LoginPage() {
             profile?.role ||
             null;
         }
-      } catch (error) {
+      } catch (
+        profileCheckError
+      ) {
         console.error(
           "PROFILE CHECK ERROR:",
-          error
+          profileCheckError
         );
       }
+
+      // =====================================================
+      // مهم للموبايل:
+      // ننتظر قليلًا حتى يكتمل حفظ جلسة Supabase
+      // ثم نعمل تحميل كامل للصفحة.
+      // =====================================================
+
+      await new Promise<void>(
+        (resolve) => {
+          window.setTimeout(
+            () => resolve(),
+            300
+          );
+        }
+      );
 
       // =====================================================
       // التوجيه
       // =====================================================
 
-      if (role === "admin") {
+      if (
+        role ===
+        "admin"
+      ) {
         alert(
           isArabic
             ? "تم تسجيل دخول الأدمن بنجاح 🎉"
             : "Admin login successful 🎉"
         );
 
-        router.replace(
+        window.location.assign(
           "/admin/dashboard"
         );
 
@@ -169,7 +212,9 @@ export default function LoginPage() {
           : "Login successful 🎉"
       );
 
-      router.replace("/");
+      window.location.assign(
+        "/"
+      );
     } catch (error) {
       console.error(
         "LOGIN EXCEPTION:",
@@ -191,7 +236,10 @@ export default function LoginPage() {
   // =====================================================
 
   async function handleForgotPassword() {
-    if (loading || resetting) {
+    if (
+      loading ||
+      resetting
+    ) {
       return;
     }
 
@@ -208,7 +256,9 @@ export default function LoginPage() {
       return;
     }
 
-    setResetting(true);
+    setResetting(
+      true
+    );
 
     try {
       const redirectTo =
@@ -258,7 +308,9 @@ export default function LoginPage() {
           : "An unexpected error occurred while sending the reset link."
       );
     } finally {
-      setResetting(false);
+      setResetting(
+        false
+      );
     }
   }
 
@@ -272,14 +324,16 @@ export default function LoginPage() {
       }`}
     >
       {/* =====================================================
-          اختيار اللغة
+          زر اللغة
           ثابت دائمًا أعلى اليسار
       ===================================================== */}
 
       <div className="absolute left-4 top-4 sm:left-6 sm:top-6">
         <button
           type="button"
-          onClick={toggleLanguage}
+          onClick={
+            toggleLanguage
+          }
           className="rounded-xl border border-green-600 bg-white px-4 py-2 font-bold text-green-700 shadow-sm transition hover:bg-green-50"
         >
           🌐{" "}
@@ -289,7 +343,12 @@ export default function LoginPage() {
         </button>
       </div>
 
+      {/* =====================================================
+          بطاقة تسجيل الدخول
+      ===================================================== */}
+
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+
         {/* الشعار */}
 
         <div className="mb-8 text-center">
@@ -326,12 +385,17 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* النموذج */}
+        {/* =====================================================
+            النموذج
+        ===================================================== */}
 
         <form
-          onSubmit={handleLogin}
+          onSubmit={
+            handleLogin
+          }
           className="space-y-5"
         >
+
           {/* البريد */}
 
           <div>
@@ -343,8 +407,12 @@ export default function LoginPage() {
 
             <input
               type="email"
-              value={email}
-              onChange={(e) =>
+              value={
+                email
+              }
+              onChange={(
+                e
+              ) =>
                 setEmail(
                   e.target.value
                 )
@@ -393,8 +461,12 @@ export default function LoginPage() {
 
             <input
               type="password"
-              value={password}
-              onChange={(e) =>
+              value={
+                password
+              }
+              onChange={(
+                e
+              ) =>
                 setPassword(
                   e.target.value
                 )
