@@ -70,6 +70,23 @@ export async function updateSession(
       }
     );
 
+  // =====================================================
+  // لا نشغّل Auth refresh على API requests
+  // لأن الـAPI في مشروعنا تستقبل Bearer Token
+  // =====================================================
+
+  if (
+    request.nextUrl.pathname.startsWith(
+      "/api/"
+    )
+  ) {
+    return supabaseResponse;
+  }
+
+  // =====================================================
+  // تحديث جلسة Supabase للصفحات فقط
+  // =====================================================
+
   await supabase.auth.getClaims();
 
   return supabaseResponse;
