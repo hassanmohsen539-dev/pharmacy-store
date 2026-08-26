@@ -1,46 +1,49 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type {
+  AuthChangeEvent,
+  Session,
+} from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 
 export default function AdminNavigation() {
-  const pathname = usePathname();
+  const pathname =
+    usePathname();
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [isAdmin, setIsAdmin] =
+    useState(false);
 
-  const checkAdmin = useCallback(async () => {
+  const [checkingAdmin, setCheckingAdmin] =
+    useState(true);
+
+  async function checkAdmin(
+    session: Session | null
+  ) {
+    if (!session?.user) {
+      setIsAdmin(false);
+      setCheckingAdmin(false);
+      return;
+    }
+
     try {
-      const {
-        data: { session },
-        error: sessionError,
-      } = await supabase.auth.getSession();
-
-      if (sessionError) {
-        console.error(
-          "ADMIN SESSION ERROR:",
-          sessionError
-        );
-
-        setIsAdmin(false);
-        return;
-      }
-
-      if (!session?.user) {
-        setIsAdmin(false);
-        return;
-      }
-
       const {
         data: profile,
         error: profileError,
-      } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle();
+      } =
+        await supabase
+          .from("profiles")
+          .select("role")
+          .eq(
+            "id",
+            session.user.id
+          )
+          .maybeSingle();
 
       if (profileError) {
         console.error(
@@ -52,7 +55,10 @@ export default function AdminNavigation() {
         return;
       }
 
-      setIsAdmin(profile?.role === "admin");
+      setIsAdmin(
+        profile?.role ===
+          "admin"
+      );
     } catch (error) {
       console.error(
         "CHECK ADMIN ERROR:",
@@ -63,54 +69,119 @@ export default function AdminNavigation() {
     } finally {
       setCheckingAdmin(false);
     }
-  }, []);
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    async function runCheck() {
-      if (!mounted) {
-        return;
-      }
+    // =====================================================
+    // فحص الجلسة مرة واحدة فقط
+    // =====================================================
 
-      setCheckingAdmin(true);
-      await checkAdmin();
+    async function initialize() {
+      try {
+        const {
+          data: {
+            session,
+          },
+          error,
+        } =
+          await supabase.auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "ADMIN INITIAL SESSION ERROR:",
+            error
+          );
+
+          setIsAdmin(false);
+          setCheckingAdmin(false);
+          return;
+        }
+
+        await checkAdmin(
+          session
+        );
+      } catch (error) {
+        console.error(
+          "ADMIN INITIAL CHECK ERROR:",
+          error
+        );
+
+        if (mounted) {
+          setIsAdmin(false);
+          setCheckingAdmin(false);
+        }
+      }
     }
 
-    // فحص أول
-    runCheck();
+    void initialize();
 
-    // أحيانًا Session تحتاج لحظة بعد الانتقال
-    const timer1 = setTimeout(() => {
-      if (mounted) {
-        checkAdmin();
-      }
-    }, 500);
+    // =====================================================
+    // متابعة تغييرات Auth
+    // بدون getSession إضافي
+    // =====================================================
 
-    const timer2 = setTimeout(() => {
-      if (mounted) {
-        checkAdmin();
-      }
-    }, 1500);
+    const {
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        async (
+          event: AuthChangeEvent,
+          session: Session | null
+        ) => {
+          if (!mounted) {
+            return;
+          }
+
+          console.log(
+            "ADMIN AUTH EVENT:",
+            event
+          );
+
+          if (
+            event ===
+              "SIGNED_OUT" ||
+            !session
+          ) {
+            setIsAdmin(false);
+            setCheckingAdmin(false);
+            return;
+          }
+
+          await checkAdmin(
+            session
+          );
+        }
+      );
 
     return () => {
       mounted = false;
-      clearTimeout(timer1);
-      clearTimeout(timer2);
+      subscription.unsubscribe();
     };
-  }, [checkAdmin, pathname]);
+  }, []);
 
   // صفحات الأدمن لها شريطها الخاص
-  if (pathname.startsWith("/admin")) {
+  if (
+    pathname.startsWith(
+      "/admin"
+    )
+  ) {
     return null;
   }
 
-  // أثناء التحقق
-  if (checkingAdmin) {
+  if (
+    checkingAdmin
+  ) {
     return null;
   }
 
-  // العميل العادي
   if (!isAdmin) {
     return null;
   }
