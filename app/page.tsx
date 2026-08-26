@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
 type Product = {
@@ -12,6 +13,7 @@ type Product = {
   stock: number;
   icon: string | null;
   image_url: string | null;
+  category: string | null;
 };
 
 type CartItem = Product & {
@@ -247,8 +249,6 @@ export default function Home() {
 
   // =====================================================
   // تحميل المستخدم مرة واحدة
-  //
-  // لا يوجد onAuthStateChange هنا.
   // =====================================================
 
   useEffect(() => {
@@ -1013,6 +1013,8 @@ export default function Home() {
                       product.name_en,
                     image_url:
                       product.image_url,
+                    category:
+                      product.category,
                     quantity:
                       item.quantity +
                       1,
@@ -1249,7 +1251,7 @@ export default function Home() {
         await supabase
           .from("products")
           .select(
-            "id, name_ar, name_en, price, stock, description, icon, image_url"
+            "id, name_ar, name_en, price, stock, description, icon, image_url, category"
           )
           .in(
             "id",
@@ -1919,7 +1921,11 @@ export default function Home() {
         </h2>
 
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+
+          <Link
+            href="/category/medicines"
+            className="rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-7"
+          >
             <div className="text-4xl sm:text-5xl">
               💊
             </div>
@@ -1931,9 +1937,12 @@ export default function Home() {
             <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               أدوية ومستلزمات علاجية
             </p>
-          </div>
+          </Link>
 
-          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+          <Link
+            href="/category/skin-care"
+            className="rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-7"
+          >
             <div className="text-4xl sm:text-5xl">
               🧴
             </div>
@@ -1945,9 +1954,12 @@ export default function Home() {
             <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               منتجات العناية بالبشرة
             </p>
-          </div>
+          </Link>
 
-          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+          <Link
+            href="/category/kids"
+            className="rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-7"
+          >
             <div className="text-4xl sm:text-5xl">
               🍼
             </div>
@@ -1959,9 +1971,12 @@ export default function Home() {
             <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               منتجات الأطفال والأمهات
             </p>
-          </div>
+          </Link>
 
-          <div className="rounded-2xl bg-white p-4 text-center shadow-sm sm:p-7">
+          <Link
+            href="/category/medical-devices"
+            className="rounded-2xl bg-white p-4 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-md sm:p-7"
+          >
             <div className="text-4xl sm:text-5xl">
               🩺
             </div>
@@ -1973,7 +1988,8 @@ export default function Home() {
             <p className="mt-2 text-xs text-gray-500 sm:text-sm">
               أجهزة ومستلزمات طبية
             </p>
-          </div>
+          </Link>
+
         </div>
       </section>
 

@@ -10,6 +10,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
 
   async function handleLogin(
     e: React.FormEvent<HTMLFormElement>
@@ -23,7 +24,7 @@ export default function LoginPage() {
       return;
     }
 
-    if (loading) {
+    if (loading || resetting) {
       return;
     }
 
@@ -85,7 +86,6 @@ export default function LoginPage() {
 
       // =====================================================
       // فحص صلاحية الحساب
-      // لا نستخدم getSession هنا
       // =====================================================
 
       let role: string | null = null;
@@ -152,12 +152,79 @@ export default function LoginPage() {
     }
   }
 
+  // =====================================================
+  // نسيت كلمة المرور
+  // =====================================================
+
+  async function handleForgotPassword() {
+    if (loading || resetting) {
+      return;
+    }
+
+    const emailValue =
+      email.trim();
+
+    if (!emailValue) {
+      alert(
+        "اكتب البريد الإلكتروني أولاً، ثم اضغط نسيت كلمة المرور."
+      );
+
+      return;
+    }
+
+    setResetting(true);
+
+    try {
+      const redirectTo =
+        `${window.location.origin}/reset-password`;
+
+      const {
+        error,
+      } =
+        await supabase.auth.resetPasswordForEmail(
+          emailValue,
+          {
+            redirectTo,
+          }
+        );
+
+      if (error) {
+        console.error(
+          "PASSWORD RESET ERROR:",
+          error
+        );
+
+        alert(
+          "تعذر إرسال رابط استعادة كلمة المرور:\n\n" +
+            error.message
+        );
+
+        return;
+      }
+
+      alert(
+        "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني 📩\n\nافتح البريد واضغط على الرابط لتعيين كلمة مرور جديدة."
+      );
+    } catch (error) {
+      console.error(
+        "PASSWORD RESET EXCEPTION:",
+        error
+      );
+
+      alert(
+        "حدث خطأ غير متوقع أثناء إرسال رابط الاستعادة."
+      );
+    } finally {
+      setResetting(false);
+    }
+  }
+
   return (
     <main
       dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-gray-50 px-6"
+      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
 
         {/* الشعار */}
 
@@ -204,11 +271,16 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) =>
-                setEmail(e.target.value)
+                setEmail(
+                  e.target.value
+                )
               }
               placeholder="example@email.com"
               autoComplete="email"
-              disabled={loading}
+              disabled={
+                loading ||
+                resetting
+              }
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-right text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
             />
           </div>
@@ -216,19 +288,42 @@ export default function LoginPage() {
           {/* كلمة المرور */}
 
           <div>
-            <label className="mb-2 block font-bold text-gray-700">
-              كلمة المرور
-            </label>
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <label className="block font-bold text-gray-700">
+                كلمة المرور
+              </label>
+
+              <button
+                type="button"
+                onClick={
+                  handleForgotPassword
+                }
+                disabled={
+                  loading ||
+                  resetting
+                }
+                className="font-semibold text-sm text-green-600 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {resetting
+                  ? "جاري الإرسال..."
+                  : "نسيت كلمة المرور؟"}
+              </button>
+            </div>
 
             <input
               type="password"
               value={password}
               onChange={(e) =>
-                setPassword(e.target.value)
+                setPassword(
+                  e.target.value
+                )
               }
               placeholder="اكتب كلمة المرور"
               autoComplete="current-password"
-              disabled={loading}
+              disabled={
+                loading ||
+                resetting
+              }
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-right text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
             />
           </div>
@@ -237,7 +332,10 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              resetting
+            }
             className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading

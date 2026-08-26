@@ -13,8 +13,28 @@ type Product = {
   stock: number;
   icon: string | null;
   image_url: string | null;
+  category: string | null;
   created_at: string;
 };
+
+const categories = [
+  {
+    value: "medicines",
+    label: "💊 الأدوية",
+  },
+  {
+    value: "skin-care",
+    label: "🧴 العناية بالبشرة",
+  },
+  {
+    value: "kids",
+    label: "🍼 الأطفال",
+  },
+  {
+    value: "medical-devices",
+    label: "🩺 الأجهزة الطبية",
+  },
+];
 
 export default function EditProductPage() {
   const params = useParams();
@@ -22,21 +42,44 @@ export default function EditProductPage() {
 
   const productId = Number(params.id);
 
-  const [product, setProduct] = useState<Product | null>(null);
+  const [product, setProduct] =
+    useState<Product | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [allowed, setAllowed] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [nameAr, setNameAr] = useState("");
-  const [nameEn, setNameEn] = useState("");
-  const [description, setDescription] = useState("");
-  const [price, setPrice] = useState("");
-  const [stock, setStock] = useState("");
-  const [icon, setIcon] = useState("💊");
+  const [allowed, setAllowed] =
+    useState(false);
 
-  const [image, setImage] = useState<File | null>(null);
-  const [preview, setPreview] = useState("");
+  const [saving, setSaving] =
+    useState(false);
+
+  const [nameAr, setNameAr] =
+    useState("");
+
+  const [nameEn, setNameEn] =
+    useState("");
+
+  const [description, setDescription] =
+    useState("");
+
+  const [price, setPrice] =
+    useState("");
+
+  const [stock, setStock] =
+    useState("");
+
+  const [icon, setIcon] =
+    useState("💊");
+
+  const [category, setCategory] =
+    useState("medicines");
+
+  const [image, setImage] =
+    useState<File | null>(null);
+
+  const [preview, setPreview] =
+    useState("");
 
   // =====================================================
   // التحقق من الأدمن
@@ -84,7 +127,10 @@ export default function EditProductPage() {
         return;
       }
 
-      if (!profile || profile.role !== "admin") {
+      if (
+        !profile ||
+        profile.role !== "admin"
+      ) {
         setAllowed(false);
         setLoading(false);
         return;
@@ -110,9 +156,18 @@ export default function EditProductPage() {
   // =====================================================
 
   async function loadProduct() {
-    if (!productId || Number.isNaN(productId)) {
-      alert("رقم المنتج غير صحيح.");
-      router.push("/admin/products");
+    if (
+      !productId ||
+      Number.isNaN(productId)
+    ) {
+      alert(
+        "رقم المنتج غير صحيح."
+      );
+
+      router.push(
+        "/admin/products"
+      );
+
       return;
     }
 
@@ -136,47 +191,72 @@ export default function EditProductPage() {
           error.message
       );
 
-      router.push("/admin/products");
+      router.push(
+        "/admin/products"
+      );
+
       return;
     }
 
     if (!data) {
-      alert("المنتج غير موجود.");
-      router.push("/admin/products");
+      alert(
+        "المنتج غير موجود."
+      );
+
+      router.push(
+        "/admin/products"
+      );
+
       return;
     }
 
     const loadedProduct =
       data as Product;
 
-    setProduct(loadedProduct);
+    setProduct(
+      loadedProduct
+    );
 
     setNameAr(
-      loadedProduct.name_ar || ""
+      loadedProduct.name_ar ||
+        ""
     );
 
     setNameEn(
-      loadedProduct.name_en || ""
+      loadedProduct.name_en ||
+        ""
     );
 
     setDescription(
-      loadedProduct.description || ""
+      loadedProduct.description ||
+        ""
     );
 
     setPrice(
-      String(loadedProduct.price)
+      String(
+        loadedProduct.price
+      )
     );
 
     setStock(
-      String(loadedProduct.stock)
+      String(
+        loadedProduct.stock
+      )
     );
 
     setIcon(
-      loadedProduct.icon || "💊"
+      loadedProduct.icon ||
+        "💊"
+    );
+
+    setCategory(
+      loadedProduct.category ||
+        "medicines"
     );
 
     setPreview(
-      loadedProduct.image_url || ""
+      loadedProduct.image_url ||
+        ""
     );
   }
 
@@ -187,18 +267,29 @@ export default function EditProductPage() {
   function handleImage(
     e: React.ChangeEvent<HTMLInputElement>
   ) {
-    const file = e.target.files?.[0];
+    const file =
+      e.target.files?.[0];
 
-    if (!file) return;
-
-    // التأكد أن الملف صورة
-    if (!file.type.startsWith("image/")) {
-      alert("من فضلك اختر صورة صحيحة.");
+    if (!file) {
       return;
     }
 
-    // حجم الصورة 5 ميجا كحد أقصى
-    if (file.size > 5 * 1024 * 1024) {
+    if (
+      !file.type.startsWith(
+        "image/"
+      )
+    ) {
+      alert(
+        "من فضلك اختر صورة صحيحة."
+      );
+
+      return;
+    }
+
+    if (
+      file.size >
+      5 * 1024 * 1024
+    ) {
       alert(
         "حجم الصورة يجب ألا يتجاوز 5 ميجابايت."
       );
@@ -206,20 +297,27 @@ export default function EditProductPage() {
       return;
     }
 
-    // إزالة المعاينة القديمة لو كانت مؤقتة
     if (
       preview &&
-      preview.startsWith("blob:")
+      preview.startsWith(
+        "blob:"
+      )
     ) {
-      URL.revokeObjectURL(preview);
+      URL.revokeObjectURL(
+        preview
+      );
     }
 
     setImage(file);
 
     const imagePreview =
-      URL.createObjectURL(file);
+      URL.createObjectURL(
+        file
+      );
 
-    setPreview(imagePreview);
+    setPreview(
+      imagePreview
+    );
   }
 
   // =====================================================
@@ -229,15 +327,20 @@ export default function EditProductPage() {
   function removeSelectedImage() {
     if (
       preview &&
-      preview.startsWith("blob:")
+      preview.startsWith(
+        "blob:"
+      )
     ) {
-      URL.revokeObjectURL(preview);
+      URL.revokeObjectURL(
+        preview
+      );
     }
 
     setImage(null);
 
     setPreview(
-      product?.image_url || ""
+      product?.image_url ||
+        ""
     );
   }
 
@@ -246,7 +349,9 @@ export default function EditProductPage() {
   // =====================================================
 
   async function saveProduct() {
-    if (saving) return;
+    if (saving) {
+      return;
+    }
 
     // =====================================================
     // التحقق من البيانات
@@ -268,11 +373,21 @@ export default function EditProductPage() {
       return;
     }
 
+    if (!category) {
+      alert(
+        "اختر قسم المنتج."
+      );
+
+      return;
+    }
+
     if (
       price === "" ||
       Number(price) < 0
     ) {
-      alert("اكتب سعر صحيح.");
+      alert(
+        "اكتب سعر صحيح."
+      );
 
       return;
     }
@@ -281,21 +396,29 @@ export default function EditProductPage() {
       stock === "" ||
       Number(stock) < 0
     ) {
-      alert("اكتب كمية صحيحة.");
+      alert(
+        "اكتب كمية صحيحة."
+      );
 
       return;
     }
 
     if (
-      !Number.isFinite(Number(price))
+      !Number.isFinite(
+        Number(price)
+      )
     ) {
-      alert("السعر غير صحيح.");
+      alert(
+        "السعر غير صحيح."
+      );
 
       return;
     }
 
     if (
-      !Number.isInteger(Number(stock))
+      !Number.isInteger(
+        Number(stock)
+      )
     ) {
       alert(
         "الكمية يجب أن تكون رقمًا صحيحًا."
@@ -312,7 +435,8 @@ export default function EditProductPage() {
       // =====================================================
 
       let imageUrl =
-        product?.image_url || null;
+        product?.image_url ||
+        null;
 
       // =====================================================
       // لو اختار صورة جديدة
@@ -323,7 +447,8 @@ export default function EditProductPage() {
           image.name
             .split(".")
             .pop()
-            ?.toLowerCase() || "jpg";
+            ?.toLowerCase() ||
+          "jpg";
 
         const fileName =
           `${productId}-${Date.now()}.${extension}`;
@@ -336,7 +461,8 @@ export default function EditProductPage() {
             fileName,
             image,
             {
-              cacheControl: "3600",
+              cacheControl:
+                "3600",
               upsert: false,
             }
           );
@@ -379,7 +505,8 @@ export default function EditProductPage() {
           nameEn.trim(),
 
         description:
-          description.trim() || null,
+          description.trim() ||
+          null,
 
         price:
           Number(price),
@@ -388,17 +515,23 @@ export default function EditProductPage() {
           Number(stock),
 
         icon:
-          icon.trim() || "💊",
+          icon.trim() ||
+          "💊",
 
         image_url:
           imageUrl,
+
+        category:
+          category,
       };
 
       const {
         error: updateError,
       } = await supabase
         .from("products")
-        .update(productData)
+        .update(
+          productData
+        )
         .eq(
           "id",
           productId
@@ -547,8 +680,8 @@ export default function EditProductPage() {
           Form
       ===================================================== */}
 
-      <section className="mx-auto max-w-4xl px-6 py-10">
-        <div className="rounded-2xl bg-white p-6 shadow-sm sm:p-8">
+      <section className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-10">
+        <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-8">
 
           {/* =====================================================
               عنوان المنتج
@@ -571,13 +704,14 @@ export default function EditProductPage() {
                   />
                 ) : (
                   <span className="text-5xl">
-                    {icon || "💊"}
+                    {icon ||
+                      "💊"}
                   </span>
                 )}
               </div>
 
               <div>
-                <h2 className="text-3xl font-bold text-gray-800">
+                <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
                   ✏️ تعديل:{" "}
                   {product.name_ar}
                 </h2>
@@ -642,6 +776,41 @@ export default function EditProductPage() {
               />
             </div>
 
+            {/* القسم */}
+
+            <div>
+              <label className="mb-2 block font-bold text-gray-700">
+                قسم المنتج
+              </label>
+
+              <select
+                value={category}
+                onChange={(e) =>
+                  setCategory(
+                    e.target.value
+                  )
+                }
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 outline-none focus:border-green-600"
+              >
+                {categories.map(
+                  (item) => (
+                    <option
+                      key={
+                        item.value
+                      }
+                      value={
+                        item.value
+                      }
+                    >
+                      {
+                        item.label
+                      }
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
             {/* الوصف */}
 
             <div className="md:col-span-2">
@@ -650,7 +819,9 @@ export default function EditProductPage() {
               </label>
 
               <textarea
-                value={description}
+                value={
+                  description
+                }
                 onChange={(e) =>
                   setDescription(
                     e.target.value
@@ -740,8 +911,12 @@ export default function EditProductPage() {
               <input
                 type="file"
                 accept="image/*"
-                onChange={handleImage}
-                disabled={saving}
+                onChange={
+                  handleImage
+                }
+                disabled={
+                  saving
+                }
                 className="w-full rounded-xl border border-gray-300 bg-white p-3 text-gray-900"
               />
 
@@ -757,7 +932,7 @@ export default function EditProductPage() {
 
           {preview && (
             <div className="mt-8 rounded-2xl border border-gray-200 bg-gray-50 p-5">
-              <div className="mb-4 flex items-center justify-between">
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 className="font-bold text-gray-700">
                   🖼️ معاينة الصورة
                 </h3>
@@ -768,7 +943,9 @@ export default function EditProductPage() {
                     onClick={
                       removeSelectedImage
                     }
-                    disabled={saving}
+                    disabled={
+                      saving
+                    }
                     className="rounded-lg bg-red-50 px-4 py-2 text-sm font-bold text-red-600 hover:bg-red-100 disabled:opacity-50"
                   >
                     إلغاء الصورة الجديدة
@@ -802,8 +979,12 @@ export default function EditProductPage() {
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
 
             <button
-              onClick={saveProduct}
-              disabled={saving}
+              onClick={
+                saveProduct
+              }
+              disabled={
+                saving
+              }
               className="rounded-xl bg-green-600 px-8 py-3 font-bold text-white hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {saving
@@ -817,7 +998,9 @@ export default function EditProductPage() {
                   "/admin/products"
                 )
               }
-              disabled={saving}
+              disabled={
+                saving
+              }
               className="rounded-xl border border-gray-300 bg-white px-8 py-3 font-bold text-gray-700 hover:bg-gray-50 disabled:opacity-60"
             >
               إلغاء
