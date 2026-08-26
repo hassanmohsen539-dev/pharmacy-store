@@ -5,6 +5,10 @@ import {
   useRef,
   useState,
 } from "react";
+import type {
+  AuthChangeEvent,
+  Session,
+} from "@supabase/supabase-js";
 import Link from "next/link";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "./language-provider";
@@ -146,10 +150,6 @@ export default function Home() {
     delete: isArabic
       ? "🗑️ حذف"
       : "🗑️ Delete",
-
-    needApproval: isArabic
-      ? "⚠️ مطلوب موافقتك"
-      : "⚠️ Your approval is required",
 
     originalQuantity: isArabic
       ? "الكمية الأصلية"
@@ -327,10 +327,6 @@ export default function Home() {
       ? "⚠️ مطلوب موافقتك"
       : "⚠️ Your approval is required",
 
-    cancel: isArabic
-      ? "إلغاء"
-      : "Cancel",
-
     enterName: isArabic
       ? "اكتب اسمك"
       : "Enter your name",
@@ -342,18 +338,6 @@ export default function Home() {
     extraNotes: isArabic
       ? "أي ملاحظات إضافية..."
       : "Any additional notes...",
-
-    enterPassword: isArabic
-      ? "اكتب كلمة المرور"
-      : "Enter your password",
-
-    searchNoProducts: isArabic
-      ? "لا توجد منتجات"
-      : "No products found",
-
-    viewOrders: isArabic
-      ? "📦 طلباتي"
-      : "📦 My Orders",
   };
 
   const [products, setProducts] =
@@ -442,9 +426,6 @@ export default function Home() {
       new Set()
     );
 
-  const authInitializationRef =
-    useRef(false);
-
   const currentUserIdRef =
     useRef<string | null>(null);
 
@@ -453,7 +434,10 @@ export default function Home() {
   // =====================================================
 
   function createAudioContext() {
-    if (typeof window === "undefined") {
+    if (
+      typeof window ===
+      "undefined"
+    ) {
       return null;
     }
 
@@ -469,7 +453,9 @@ export default function Home() {
       return null;
     }
 
-    if (!audioContextRef.current) {
+    if (
+      !audioContextRef.current
+    ) {
       audioContextRef.current =
         new AudioContextClass();
     }
@@ -500,7 +486,9 @@ export default function Home() {
   }
 
   function playNotificationSound() {
-    if (!soundEnabledRef.current) {
+    if (
+      !soundEnabledRef.current
+    ) {
       return;
     }
 
@@ -527,7 +515,8 @@ export default function Home() {
       const gainNode =
         audioContext.createGain();
 
-      oscillator.type = "sine";
+      oscillator.type =
+        "sine";
 
       oscillator.frequency.setValueAtTime(
         800,
@@ -536,12 +525,14 @@ export default function Home() {
 
       oscillator.frequency.setValueAtTime(
         1000,
-        audioContext.currentTime + 0.12
+        audioContext.currentTime +
+          0.12
       );
 
       oscillator.frequency.setValueAtTime(
         800,
-        audioContext.currentTime + 0.24
+        audioContext.currentTime +
+          0.24
       );
 
       gainNode.gain.setValueAtTime(
@@ -551,12 +542,14 @@ export default function Home() {
 
       gainNode.gain.exponentialRampToValueAtTime(
         0.25,
-        audioContext.currentTime + 0.03
+        audioContext.currentTime +
+          0.03
       );
 
       gainNode.gain.exponentialRampToValueAtTime(
         0.0001,
-        audioContext.currentTime + 0.55
+        audioContext.currentTime +
+          0.55
       );
 
       oscillator.connect(
@@ -570,7 +563,8 @@ export default function Home() {
       oscillator.start();
 
       oscillator.stop(
-        audioContext.currentTime + 0.55
+        audioContext.currentTime +
+          0.55
       );
     } catch (error) {
       console.error(
@@ -600,7 +594,8 @@ export default function Home() {
       const gainNode =
         audioContext.createGain();
 
-      oscillator.type = "sine";
+      oscillator.type =
+        "sine";
 
       oscillator.frequency.setValueAtTime(
         650,
@@ -609,7 +604,8 @@ export default function Home() {
 
       oscillator.frequency.setValueAtTime(
         900,
-        audioContext.currentTime + 0.12
+        audioContext.currentTime +
+          0.12
       );
 
       gainNode.gain.setValueAtTime(
@@ -619,12 +615,14 @@ export default function Home() {
 
       gainNode.gain.exponentialRampToValueAtTime(
         0.2,
-        audioContext.currentTime + 0.03
+        audioContext.currentTime +
+          0.03
       );
 
       gainNode.gain.exponentialRampToValueAtTime(
         0.0001,
-        audioContext.currentTime + 0.28
+        audioContext.currentTime +
+          0.28
       );
 
       oscillator.connect(
@@ -638,11 +636,16 @@ export default function Home() {
       oscillator.start();
 
       oscillator.stop(
-        audioContext.currentTime + 0.28
+        audioContext.currentTime +
+          0.28
       );
 
-      soundEnabledRef.current = true;
-      setSoundEnabled(true);
+      soundEnabledRef.current =
+        true;
+
+      setSoundEnabled(
+        true
+      );
     } catch (error) {
       console.error(
         "ENABLE CUSTOMER SOUND ERROR:",
@@ -662,16 +665,23 @@ export default function Home() {
   // =====================================================
 
   async function loadProducts() {
-    setProductsLoading(true);
-    setProductsError(null);
+    setProductsLoading(
+      true
+    );
+
+    setProductsError(
+      null
+    );
 
     try {
       const response =
         await fetch(
           "/api/products",
           {
-            method: "GET",
-            cache: "no-store",
+            method:
+              "GET",
+            cache:
+              "no-store",
           }
         );
 
@@ -690,7 +700,8 @@ export default function Home() {
       }
 
       setProducts(
-        (result || []) as Product[]
+        (result ||
+          []) as Product[]
       );
     } catch (error) {
       console.error(
@@ -710,7 +721,9 @@ export default function Home() {
             )
       );
     } finally {
-      setProductsLoading(false);
+      setProductsLoading(
+        false
+      );
     }
   }
 
@@ -723,7 +736,9 @@ export default function Home() {
     detectNew = false
   ) {
     if (!detectNew) {
-      setNotificationsLoading(true);
+      setNotificationsLoading(
+        true
+      );
     }
 
     try {
@@ -732,7 +747,9 @@ export default function Home() {
         error,
       } =
         await supabase
-          .from("notifications")
+          .from(
+            "notifications"
+          )
           .select("*")
           .eq(
             "user_id",
@@ -741,7 +758,8 @@ export default function Home() {
           .order(
             "created_at",
             {
-              ascending: false,
+              ascending:
+                false,
             }
           )
           .limit(100);
@@ -755,11 +773,14 @@ export default function Home() {
       }
 
       const loaded =
-        (data || []) as Notification[];
+        (data ||
+          []) as Notification[];
 
       const filtered =
         loaded.filter(
-          (notification: Notification) =>
+          (
+            notification: Notification
+          ) =>
             !locallyDeletedNotificationIdsRef.current.has(
               notification.id
             )
@@ -769,7 +790,9 @@ export default function Home() {
         lastKnownNotificationIdRef.current ===
         null
       ) {
-        if (filtered[0]) {
+        if (
+          filtered[0]
+        ) {
           lastKnownNotificationIdRef.current =
             filtered[0].id;
         }
@@ -787,7 +810,9 @@ export default function Home() {
 
         const newNotifications =
           filtered.filter(
-            (notification: Notification) =>
+            (
+              notification: Notification
+            ) =>
               notification.id >
               lastId
           );
@@ -797,12 +822,15 @@ export default function Home() {
           0
         ) {
           const sorted =
-            [...newNotifications].sort(
+            [
+              ...newNotifications,
+            ].sort(
               (
                 a: Notification,
                 b: Notification
               ) =>
-                a.id - b.id
+                a.id -
+                b.id
             );
 
           for (
@@ -815,7 +843,8 @@ export default function Home() {
 
             lastKnownNotificationIdRef.current =
               Math.max(
-                lastKnownNotificationIdRef.current ?? 0,
+                lastKnownNotificationIdRef.current ??
+                  0,
                 notification.id
               );
           }
@@ -855,10 +884,14 @@ export default function Home() {
     }
 
     setNotifications(
-      (current: Notification[]) => {
+      (
+        current: Notification[]
+      ) => {
         if (
           current.some(
-            (item: Notification) =>
+            (
+              item: Notification
+            ) =>
               item.id ===
               notification.id
           )
@@ -878,7 +911,8 @@ export default function Home() {
 
     if (
       lastId === null ||
-      notification.id > lastId
+      notification.id >
+        lastId
     ) {
       lastKnownNotificationIdRef.current =
         notification.id;
@@ -896,11 +930,11 @@ export default function Home() {
   // =====================================================
 
   async function checkCustomerNotifications() {
-    const currentId =
+    const activeUserId =
       currentUserIdRef.current;
 
     if (
-      !currentId ||
+      !activeUserId ||
       checkingNotificationsRef.current
     ) {
       return;
@@ -917,7 +951,9 @@ export default function Home() {
       } =
         await supabase.auth.getSession();
 
-      if (!session?.access_token) {
+      if (
+        !session?.access_token
+      ) {
         return;
       }
 
@@ -925,18 +961,21 @@ export default function Home() {
         await fetch(
           "/api/customer/orders",
           {
-            method: "POST",
+            method:
+              "POST",
             headers: {
               "Content-Type":
                 "application/json",
               Authorization:
                 `Bearer ${session.access_token}`,
             },
-            body: JSON.stringify({
-              action:
-                "load_all",
-            }),
-            cache: "no-store",
+            body:
+              JSON.stringify({
+                action:
+                  "load_all",
+              }),
+            cache:
+              "no-store",
           }
         );
 
@@ -955,7 +994,9 @@ export default function Home() {
 
       const filtered =
         incoming.filter(
-          (notification: Notification) =>
+          (
+            notification: Notification
+          ) =>
             !locallyDeletedNotificationIdsRef.current.has(
               notification.id
             )
@@ -965,7 +1006,9 @@ export default function Home() {
         lastKnownNotificationIdRef.current ===
         null
       ) {
-        if (filtered[0]) {
+        if (
+          filtered[0]
+        ) {
           lastKnownNotificationIdRef.current =
             filtered[0].id;
         }
@@ -982,7 +1025,9 @@ export default function Home() {
 
       const newNotifications =
         filtered.filter(
-          (notification: Notification) =>
+          (
+            notification: Notification
+          ) =>
             notification.id >
             lastId
         );
@@ -992,12 +1037,15 @@ export default function Home() {
         0
       ) {
         const sorted =
-          [...newNotifications].sort(
+          [
+            ...newNotifications,
+          ].sort(
             (
               a: Notification,
               b: Notification
             ) =>
-              a.id - b.id
+              a.id -
+              b.id
           );
 
         for (
@@ -1010,13 +1058,14 @@ export default function Home() {
 
           lastKnownNotificationIdRef.current =
             Math.max(
-              lastKnownNotificationIdRef.current ?? 0,
+              lastKnownNotificationIdRef.current ??
+                0,
               notification.id
             );
         }
 
         await loadQuantityChanges(
-          currentId
+          activeUserId
         );
       } else {
         setNotifications(
@@ -1058,13 +1107,19 @@ export default function Home() {
         ordersError ||
         !orders?.length
       ) {
-        setQuantityChanges([]);
+        setQuantityChanges(
+          []
+        );
         return;
       }
 
       const orderIds =
         orders.map(
-          (order: { id: number }) =>
+          (
+            order: {
+              id: number;
+            }
+          ) =>
             order.id
         );
 
@@ -1098,7 +1153,8 @@ export default function Home() {
       }
 
       setQuantityChanges(
-        (data || []) as QuantityChange[]
+        (data ||
+          []) as QuantityChange[]
       );
     } catch (error) {
       console.error(
@@ -1109,65 +1165,36 @@ export default function Home() {
   }
 
   // =====================================================
-  // تحميل المستخدم والجلسة - النسخة الثابتة
+  // مسح حالة المستخدم
   // =====================================================
 
-  async function applyAuthenticatedUser(
-    userIdValue: string,
-    emailValue: string | null,
-    userMetadata?: {
-      name?: string;
-      full_name?: string;
-    }
-  ) {
+  function clearCustomerState() {
     currentUserIdRef.current =
-      userIdValue;
+      null;
 
     setUserId(
-      userIdValue
+      null
     );
 
     setUserEmail(
-      emailValue
+      null
     );
-
-    const name =
-      userMetadata?.name ||
-      userMetadata?.full_name ||
-      null;
 
     setUserName(
-      name
+      null
     );
 
-    try {
-      await Promise.all([
-        loadNotifications(
-          userIdValue,
-          false
-        ),
-        loadQuantityChanges(
-          userIdValue
-        ),
-      ]);
-    } catch (error) {
-      console.error(
-        "LOAD AUTH USER DATA ERROR:",
-        error
-      );
-    }
-  }
+    setNotifications(
+      []
+    );
 
-  function clearAuthenticatedUser() {
-    currentUserIdRef.current =
-      null;
+    setQuantityChanges(
+      []
+    );
 
-    setUserId(null);
-    setUserEmail(null);
-    setUserName(null);
-    setNotifications([]);
-    setQuantityChanges([]);
-    setNewNotificationAlert(null);
+    setNewNotificationAlert(
+      null
+    );
 
     lastKnownNotificationIdRef.current =
       null;
@@ -1175,27 +1202,74 @@ export default function Home() {
     locallyDeletedNotificationIdsRef.current.clear();
   }
 
+  // =====================================================
+  // تطبيق الجلسة بدون refreshSession
+  // =====================================================
+
+  function applySession(
+    session: Session
+  ) {
+    const user =
+      session.user;
+
+    currentUserIdRef.current =
+      user.id;
+
+    setUserId(
+      user.id
+    );
+
+    setUserEmail(
+      user.email ?? null
+    );
+
+    const metadata =
+      user.user_metadata ||
+      {};
+
+    setUserName(
+      metadata.name ||
+        metadata.full_name ||
+        null
+    );
+
+    setLoadingUser(
+      false
+    );
+
+    window.setTimeout(
+      () => {
+        void loadNotifications(
+          user.id,
+          false
+        );
+
+        void loadQuantityChanges(
+          user.id
+        );
+      },
+      0
+    );
+  }
+
+  // =====================================================
+  // Auth
+  // =====================================================
+
   useEffect(() => {
     let mounted = true;
 
     async function initializeAuth() {
-      if (
-        authInitializationRef.current
-      ) {
-        return;
-      }
-
-      authInitializationRef.current =
-        true;
-
-      setLoadingUser(true);
+      setLoadingUser(
+        true
+      );
 
       try {
         const {
           data: {
             session,
           },
-          error: sessionError,
+          error,
         } =
           await supabase.auth.getSession();
 
@@ -1203,26 +1277,27 @@ export default function Home() {
           return;
         }
 
-        if (
-          sessionError
-        ) {
+        if (error) {
           console.error(
             "INITIAL SESSION ERROR:",
-            sessionError
+            error
           );
 
-          clearAuthenticatedUser();
+          setLoadingUser(
+            false
+          );
+
           return;
         }
 
-        if (session?.user) {
-          await applyAuthenticatedUser(
-            session.user.id,
-            session.user.email ?? null,
-            session.user.user_metadata
+        if (session) {
+          applySession(
+            session
           );
         } else {
-          clearAuthenticatedUser();
+          setLoadingUser(
+            false
+          );
         }
       } catch (error) {
         console.error(
@@ -1231,11 +1306,9 @@ export default function Home() {
         );
 
         if (mounted) {
-          clearAuthenticatedUser();
-        }
-      } finally {
-        if (mounted) {
-          setLoadingUser(false);
+          setLoadingUser(
+            false
+          );
         }
       }
     }
@@ -1249,80 +1322,35 @@ export default function Home() {
     } =
       supabase.auth.onAuthStateChange(
         (
-          event,
-          session
+          event: AuthChangeEvent,
+          session: Session | null
         ) => {
           if (!mounted) {
             return;
           }
 
           console.log(
-            "CUSTOMER AUTH STATE:",
+            "CUSTOMER AUTH EVENT:",
             event,
             !!session
           );
 
           if (
-            session?.user
+            session
           ) {
-            currentUserIdRef.current =
-              session.user.id;
-
-            setUserId(
-              session.user.id
+            applySession(
+              session
             );
 
-            setUserEmail(
-              session.user.email ?? null
-            );
+            return;
+          }
 
-            const metadata =
-              session.user
-                .user_metadata || {};
-
-            setUserName(
-              metadata.name ||
-                metadata.full_name ||
-                null
-            );
-
-            setLoadingUser(
-              false
-            );
-
-            if (
-              event ===
-                "SIGNED_IN" ||
-              event ===
-                "TOKEN_REFRESHED" ||
-              event ===
-                "INITIAL_SESSION"
-            ) {
-              window.setTimeout(
-                () => {
-                  if (
-                    !mounted
-                  ) {
-                    return;
-                  }
-
-                  void loadNotifications(
-                    session.user.id,
-                    false
-                  );
-
-                  void loadQuantityChanges(
-                    session.user.id
-                  );
-                },
-                0
-              );
-            }
-          } else if (
+          if (
             event ===
-              "SIGNED_OUT"
+            "SIGNED_OUT"
           ) {
-            clearAuthenticatedUser();
+            clearCustomerState();
+
             setLoadingUser(
               false
             );
@@ -1330,16 +1358,17 @@ export default function Home() {
         }
       );
 
-    loadProducts();
+    void loadProducts();
 
     return () => {
       mounted = false;
+
       subscription.unsubscribe();
     };
   }, []);
 
   // =====================================================
-  // تحديث تلقائي للإشعارات
+  // تحديث تلقائي
   // =====================================================
 
   useEffect(() => {
@@ -1500,7 +1529,7 @@ export default function Home() {
         )
         .subscribe(
           (
-            status
+            status: string
           ) => {
             console.log(
               "CUSTOMER REALTIME STATUS:",
@@ -1532,10 +1561,11 @@ export default function Home() {
           ? "حدث خطأ أثناء تسجيل الخروج"
           : "An error occurred while signing out."
       );
+
       return;
     }
 
-    clearAuthenticatedUser();
+    clearCustomerState();
 
     alert(
       isArabic
@@ -1555,11 +1585,16 @@ export default function Home() {
       return;
     }
 
-    const { error } =
+    const {
+      error,
+    } =
       await supabase
-        .from("notifications")
+        .from(
+          "notifications"
+        )
         .update({
-          is_read: true,
+          is_read:
+            true,
         })
         .eq(
           "id",
@@ -1579,7 +1614,9 @@ export default function Home() {
     }
 
     setNotifications(
-      (current: Notification[]) =>
+      (
+        current: Notification[]
+      ) =>
         current.map(
           (
             notification: Notification
@@ -1620,15 +1657,22 @@ export default function Home() {
             notification.id
         );
 
-    if (!unreadIds.length) {
+    if (
+      !unreadIds.length
+    ) {
       return;
     }
 
-    const { error } =
+    const {
+      error,
+    } =
       await supabase
-        .from("notifications")
+        .from(
+          "notifications"
+        )
         .update({
-          is_read: true,
+          is_read:
+            true,
         })
         .in(
           "id",
@@ -1645,24 +1689,28 @@ export default function Home() {
           ? "حدث خطأ أثناء تحديث الإشعارات."
           : "An error occurred while updating notifications."
       );
+
       return;
     }
 
     setNotifications(
-      (current: Notification[]) =>
+      (
+        current: Notification[]
+      ) =>
         current.map(
           (
             notification: Notification
           ) => ({
             ...notification,
-            is_read: true,
+            is_read:
+              true,
           })
         )
     );
   }
 
   // =====================================================
-  // حذف إشعار واحد
+  // حذف إشعار
   // =====================================================
 
   async function deleteNotification(
@@ -1688,7 +1736,9 @@ export default function Home() {
     );
 
     setNotifications(
-      (current: Notification[]) =>
+      (
+        current: Notification[]
+      ) =>
         current.filter(
           (
             notification: Notification
@@ -1702,12 +1752,18 @@ export default function Home() {
       newNotificationAlert?.id ===
       notificationId
     ) {
-      setNewNotificationAlert(null);
+      setNewNotificationAlert(
+        null
+      );
     }
 
-    const { error } =
+    const {
+      error,
+    } =
       await supabase
-        .from("notifications")
+        .from(
+          "notifications"
+        )
         .delete()
         .eq(
           "id",
@@ -1740,8 +1796,6 @@ export default function Home() {
           : "Failed to delete notification:\n" +
               error.message
       );
-
-      return;
     }
   }
 
@@ -1777,18 +1831,29 @@ export default function Home() {
       );
 
     ids.forEach(
-      (id) =>
+      (
+        id: number
+      ) =>
         locallyDeletedNotificationIdsRef.current.add(
           id
         )
     );
 
-    setNotifications([]);
-    setNewNotificationAlert(null);
+    setNotifications(
+      []
+    );
 
-    const { error } =
+    setNewNotificationAlert(
+      null
+    );
+
+    const {
+      error,
+    } =
       await supabase
-        .from("notifications")
+        .from(
+          "notifications"
+        )
         .delete()
         .eq(
           "user_id",
@@ -1802,7 +1867,9 @@ export default function Home() {
       );
 
       ids.forEach(
-        (id) =>
+        (
+          id: number
+        ) =>
           locallyDeletedNotificationIdsRef.current.delete(
             id
           )
@@ -1820,8 +1887,6 @@ export default function Home() {
           : "Failed to delete notifications:\n" +
               error.message
       );
-
-      return;
     }
   }
 
@@ -1836,7 +1901,9 @@ export default function Home() {
     message: string
   ) {
     try {
-      const { error } =
+      const {
+        error,
+      } =
         await supabase.rpc(
           "notify_admins",
           {
@@ -1898,6 +1965,7 @@ export default function Home() {
             ? "يجب تسجيل الدخول أولاً."
             : "You must log in first."
         );
+
         return;
       }
 
@@ -1906,8 +1974,12 @@ export default function Home() {
         error: orderError,
       } =
         await supabase
-          .from("orders")
-          .select("id,user_id")
+          .from(
+            "orders"
+          )
+          .select(
+            "id,user_id"
+          )
           .eq(
             "id",
             change.order_id
@@ -1927,6 +1999,7 @@ export default function Home() {
             ? "لا يمكن تنفيذ هذا التعديل."
             : "This quantity change cannot be processed."
         );
+
         return;
       }
 
@@ -1962,6 +2035,7 @@ export default function Home() {
             : "An error occurred while checking the quantity change:\n" +
                 changeError.message
         );
+
         return;
       }
 
@@ -1979,9 +2053,13 @@ export default function Home() {
         return;
       }
 
-      const { data: item } =
+      const {
+        data: item,
+      } =
         await supabase
-          .from("order_items")
+          .from(
+            "order_items"
+          )
           .select("*")
           .eq(
             "id",
@@ -1999,6 +2077,7 @@ export default function Home() {
             ? "تعذر العثور على المنتج داخل الطلب."
             : "The product could not be found inside the order."
         );
+
         return;
       }
 
@@ -2024,7 +2103,9 @@ export default function Home() {
           updateItemError,
       } =
         await supabase
-          .from("order_items")
+          .from(
+            "order_items"
+          )
           .update({
             quantity:
               finalQuantity,
@@ -2054,6 +2135,7 @@ export default function Home() {
             : "Failed to update product:\n" +
                 updateItemError.message
         );
+
         return;
       }
 
@@ -2080,7 +2162,9 @@ export default function Home() {
             "pending"
           );
 
-      if (updateChangeError) {
+      if (
+        updateChangeError
+      ) {
         alert(
           isArabic
             ? "فشل حفظ رد العميل:\n" +
@@ -2088,6 +2172,7 @@ export default function Home() {
             : "Failed to save your response:\n" +
                 updateChangeError.message
         );
+
         return;
       }
 
@@ -2095,7 +2180,9 @@ export default function Home() {
         data: allItems,
       } =
         await supabase
-          .from("order_items")
+          .from(
+            "order_items"
+          )
           .select(
             "price,quantity"
           )
@@ -2105,12 +2192,19 @@ export default function Home() {
           );
 
       const newTotal =
-        (allItems || []).reduce(
+        (
+          allItems ||
+          []
+        ).reduce(
           (
             sum: number,
             orderItem: {
-              price: number | string;
-              quantity: number | string;
+              price:
+                | number
+                | string;
+              quantity:
+                | number
+                | string;
             }
           ) =>
             sum +
@@ -2124,7 +2218,9 @@ export default function Home() {
         );
 
       await supabase
-        .from("orders")
+        .from(
+          "orders"
+        )
         .update({
           total:
             newTotal,
@@ -2200,12 +2296,16 @@ export default function Home() {
   function addToCart(
     product: Product
   ) {
-    if (product.stock <= 0) {
+    if (
+      product.stock <=
+      0
+    ) {
       alert(
         isArabic
           ? "هذا المنتج غير متوفر حاليًا."
           : "This product is currently out of stock."
       );
+
       return;
     }
 
@@ -2268,7 +2368,8 @@ export default function Home() {
           ...currentCart,
           {
             ...product,
-            quantity: 1,
+            quantity:
+              1,
           },
         ];
       }
@@ -2287,7 +2388,8 @@ export default function Home() {
             item: CartItem
           ) => {
             if (
-              item.id !== id
+              item.id !==
+              id
             ) {
               return item;
             }
@@ -2398,7 +2500,9 @@ export default function Home() {
             .trim()
             .toLowerCase();
 
-        if (!searchText) {
+        if (
+          !searchText
+        ) {
           return true;
         }
 
@@ -2428,6 +2532,10 @@ export default function Home() {
       }
     );
 
+  // =====================================================
+  // فتح الدفع
+  // =====================================================
+
   function openCheckout() {
     if (!userId) {
       alert(
@@ -2435,6 +2543,7 @@ export default function Home() {
           ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
           : "You must log in first to complete the order."
       );
+
       return;
     }
 
@@ -2444,12 +2553,22 @@ export default function Home() {
           ? "السلة فارغة، أضف منتج أولاً"
           : "Your cart is empty. Add a product first."
       );
+
       return;
     }
 
-    setCartOpen(false);
-    setCheckoutOpen(true);
+    setCartOpen(
+      false
+    );
+
+    setCheckoutOpen(
+      true
+    );
   }
+
+  // =====================================================
+  // تأكيد الطلب
+  // =====================================================
 
   async function confirmOrder() {
     if (ordering) {
@@ -2466,6 +2585,7 @@ export default function Home() {
           ? "من فضلك املأ الاسم ورقم الهاتف والعنوان"
           : "Please fill in your name, phone number, and address."
       );
+
       return;
     }
 
@@ -2475,58 +2595,34 @@ export default function Home() {
           ? "السلة فارغة"
           : "Your cart is empty."
       );
+
       return;
     }
 
-    setOrdering(true);
+    setOrdering(
+      true
+    );
 
     try {
-      // ===================================================
-      // تأكيد الجلسة فعليًا قبل الطلب
-      // ===================================================
-
-      let {
+      const {
         data: {
           user,
         },
+        error:
+          userError,
       } =
         await supabase.auth.getUser();
 
-      if (!user) {
-        const {
-          data: {
-            session,
-          },
-        } =
-          await supabase.auth.getSession();
-
-        if (
-          session?.user
-        ) {
-          user =
-            session.user;
-
-          currentUserIdRef.current =
-            user.id;
-
-          setUserId(
-            user.id
-          );
-
-          setUserEmail(
-            user.email ?? null
-          );
-        }
-      }
-
-      if (!user) {
+      if (
+        userError ||
+        !user
+      ) {
         alert(
           isArabic
-            ? "الجلسة غير جاهزة بعد. حاول مرة أخرى."
-            : "Your login session is not ready yet. Please try again."
+            ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
+            : "You must log in first to complete the order."
         );
 
-        setOrdering(false);
         return;
       }
 
@@ -2545,7 +2641,9 @@ export default function Home() {
           stockError,
       } =
         await supabase
-          .from("products")
+          .from(
+            "products"
+          )
           .select(
             "id,name_ar,name_en,price,stock,description,icon,image_url,category"
           )
@@ -2560,11 +2658,13 @@ export default function Home() {
             ? "حدث خطأ أثناء التأكد من المخزون."
             : "An error occurred while checking stock."
         );
+
         return;
       }
 
       for (
-        const cartItem of cart
+        const cartItem of
+          cart
       ) {
         const latest =
           latestProducts?.find(
@@ -2581,6 +2681,7 @@ export default function Home() {
               ? `المنتج "${cartItem.name_ar}" لم يعد موجودًا.`
               : `The product "${cartItem.name_en || cartItem.name_ar}" is no longer available.`
           );
+
           return;
         }
 
@@ -2595,34 +2696,46 @@ export default function Home() {
           );
 
           await loadProducts();
+
           return;
         }
       }
 
       const {
         data: order,
-        error: orderError,
+        error:
+          orderError,
       } =
         await supabase
-          .from("orders")
+          .from(
+            "orders"
+          )
           .insert({
             user_id:
               user.id,
+
             customer_name:
               customerName.trim(),
+
             phone:
               phone.trim(),
+
             address:
               address.trim(),
+
             notes:
               notes.trim() ||
               null,
+
             total:
               cartTotal,
+
             status:
               "جديد",
           })
-          .select("id")
+          .select(
+            "id"
+          )
           .single();
 
       if (orderError) {
@@ -2633,6 +2746,7 @@ export default function Home() {
             : "An error occurred while creating the order:\n\n" +
                 orderError.message
         );
+
         return;
       }
 
@@ -2642,6 +2756,7 @@ export default function Home() {
             ? "تم إنشاء الطلب ولكن لم يتم الحصول على رقم الطلب."
             : "The order was created, but the order number was not returned."
         );
+
         return;
       }
 
@@ -2652,27 +2767,36 @@ export default function Home() {
           ) => ({
             order_id:
               order.id,
+
             product_id:
               item.id,
+
             product_name:
               item.name_ar,
+
             price:
               item.price,
+
             requested_quantity:
               item.quantity,
+
             approved_quantity:
               item.quantity,
+
             quantity:
               item.quantity,
+
             customer_approval:
               null,
+
             approval_message:
               null,
           })
         );
 
       const {
-        error: itemsError,
+        error:
+          itemsError,
       } =
         await supabase
           .from(
@@ -2692,7 +2816,9 @@ export default function Home() {
         );
 
         await supabase
-          .from("orders")
+          .from(
+            "orders"
+          )
           .delete()
           .eq(
             "id",
@@ -2707,12 +2833,26 @@ export default function Home() {
       }
 
       setCart([]);
-      setCheckoutOpen(false);
 
-      setCustomerName("");
-      setPhone("");
-      setAddress("");
-      setNotes("");
+      setCheckoutOpen(
+        false
+      );
+
+      setCustomerName(
+        ""
+      );
+
+      setPhone(
+        ""
+      );
+
+      setAddress(
+        ""
+      );
+
+      setNotes(
+        ""
+      );
 
       alert(
         isArabic
@@ -2749,7 +2889,9 @@ export default function Home() {
           : "An unexpected error occurred."
       );
     } finally {
-      setOrdering(false);
+      setOrdering(
+        false
+      );
     }
   }
 
@@ -2757,7 +2899,9 @@ export default function Home() {
   // Loading
   // =====================================================
 
-  if (productsLoading) {
+  if (
+    productsLoading
+  ) {
     return (
       <main
         dir={dir}
@@ -2784,7 +2928,9 @@ export default function Home() {
   // Products Error
   // =====================================================
 
-  if (productsError) {
+  if (
+    productsError
+  ) {
     return (
       <main
         dir={dir}
@@ -2912,7 +3058,10 @@ export default function Home() {
               }
               className="rounded-lg border border-purple-600 bg-white px-3 py-2 text-sm font-bold text-purple-700 shadow-sm hover:bg-purple-50"
             >
-              🌐 {t.languageButton}
+              🌐{" "}
+              {
+                t.languageButton
+              }
             </button>
 
             {loadingUser ? (
@@ -2925,7 +3074,9 @@ export default function Home() {
                   href="/orders"
                   className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700"
                 >
-                  {t.myOrders}
+                  {
+                    t.myOrders
+                  }
                 </a>
 
                 <button
@@ -2936,7 +3087,9 @@ export default function Home() {
                   }
                   className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600"
                 >
-                  {t.notifications}
+                  {
+                    t.notifications
+                  }
 
                   {unreadNotifications >
                     0 && (
@@ -2962,21 +3115,27 @@ export default function Home() {
                 href="/login"
                 className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
               >
-                👤 {t.login}
+                👤{" "}
+                {t.login}
               </a>
             )}
 
             <button
               onClick={() =>
-                setCartOpen(true)
+                setCartOpen(
+                  true
+                )
               }
               className="relative rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white"
             >
               {t.cart}
 
-              {cartCount > 0 && (
+              {cartCount >
+                0 && (
                 <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                  {cartCount}
+                  {
+                    cartCount
+                  }
                 </span>
               )}
             </button>
@@ -3000,8 +3159,12 @@ export default function Home() {
         <div className="mx-auto mt-8 flex w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-lg">
           <input
             type="text"
-            value={search}
-            onChange={(e) =>
+            value={
+              search
+            }
+            onChange={(
+              e
+            ) =>
               setSearch(
                 e.target.value
               )
@@ -3031,11 +3194,15 @@ export default function Home() {
             <div className="flex items-center justify-between border-b p-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  {t.notifications}
+                  {
+                    t.notifications
+                  }
                 </h2>
 
                 <p className="mt-1 text-xs text-gray-600">
-                  {t.notificationUpdates}
+                  {
+                    t.notificationUpdates
+                  }
                 </p>
               </div>
 
@@ -3080,7 +3247,9 @@ export default function Home() {
                   }
                   className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white disabled:opacity-50"
                 >
-                  {t.markAllRead}
+                  {
+                    t.markAllRead
+                  }
                 </button>
 
                 <button
@@ -3093,7 +3262,9 @@ export default function Home() {
                   }
                   className="rounded-xl border border-red-500 bg-white px-4 py-3 font-bold text-red-600 disabled:opacity-50"
                 >
-                  {t.deleteAll}
+                  {
+                    t.deleteAll
+                  }
                 </button>
               </div>
             </div>
@@ -3110,7 +3281,9 @@ export default function Home() {
                   </div>
 
                   <p className="mt-4 font-bold text-gray-800">
-                    {t.noNotifications}
+                    {
+                      t.noNotifications
+                    }
                   </p>
                 </div>
               ) : (
@@ -3197,7 +3370,9 @@ export default function Home() {
                                       }
                                       className="rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700"
                                     >
-                                      {t.new}
+                                      {
+                                        t.new
+                                      }
                                     </button>
                                   )}
 
@@ -3210,7 +3385,9 @@ export default function Home() {
                                     }
                                     className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600"
                                   >
-                                    {t.delete}
+                                    {
+                                      t.delete
+                                    }
                                   </button>
                                 </div>
                               </div>
@@ -3221,13 +3398,17 @@ export default function Home() {
                                   "pending" && (
                                   <div className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-4">
                                     <p className="font-bold text-orange-700">
-                                      {t.approvalMessage}
+                                      {
+                                        t.approvalMessage
+                                      }
                                     </p>
 
                                     <div className="mt-3 grid grid-cols-2 gap-3">
                                       <div className="rounded-lg bg-white p-3 text-center">
                                         <p className="text-xs text-gray-600">
-                                          {t.originalQuantity}
+                                          {
+                                            t.originalQuantity
+                                          }
                                         </p>
 
                                         <p className="text-2xl font-black text-blue-700">
@@ -3239,7 +3420,9 @@ export default function Home() {
 
                                       <div className="rounded-lg bg-white p-3 text-center">
                                         <p className="text-xs text-gray-600">
-                                          {t.proposedQuantity}
+                                          {
+                                            t.proposedQuantity
+                                          }
                                         </p>
 
                                         <p className="text-2xl font-black text-orange-600">
@@ -3296,7 +3479,9 @@ export default function Home() {
                                 relatedChange?.status ===
                                   "approved" && (
                                   <div className="mt-4 rounded-xl border-2 border-green-300 bg-green-50 p-3 text-center font-bold text-green-700">
-                                    {t.approved}
+                                    {
+                                      t.approved
+                                    }
                                   </div>
                                 )}
 
@@ -3304,7 +3489,9 @@ export default function Home() {
                                 relatedChange?.status ===
                                   "rejected" && (
                                   <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700">
-                                    {t.rejected}
+                                    {
+                                      t.rejected
+                                    }
                                   </div>
                                 )}
                             </div>
@@ -3335,7 +3522,9 @@ export default function Home() {
 
       <section className="mx-auto w-full max-w-6xl px-4 py-10">
         <h2 className="mb-8 text-center text-2xl font-bold text-gray-800">
-          {t.categories}
+          {
+            t.categories
+          }
         </h2>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -3348,7 +3537,9 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {t.medicines}
+              {
+                t.medicines
+              }
             </h3>
           </Link>
 
@@ -3361,7 +3552,9 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {t.skinCare}
+              {
+                t.skinCare
+              }
             </h3>
           </Link>
 
@@ -3387,7 +3580,9 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {t.medicalDevices}
+              {
+                t.medicalDevices
+              }
             </h3>
           </Link>
         </div>
@@ -3406,7 +3601,9 @@ export default function Home() {
               </h2>
 
               <p className="mt-2 text-sm text-gray-600">
-                {t.availableProducts}
+                {
+                  t.availableProducts
+                }
               </p>
             </div>
 
@@ -3416,7 +3613,9 @@ export default function Home() {
               }
               className="rounded-xl border border-green-600 px-5 py-2 font-bold text-green-700"
             >
-              {t.refreshProducts}
+              {
+                t.refreshProducts
+              }
             </button>
           </div>
 
@@ -3464,18 +3663,14 @@ export default function Home() {
                     </div>
 
                     <h3 className="mt-3 font-bold text-gray-800">
-                      {
-                        language ===
-                        "ar"
-                          ? product.name_ar
-                          : product.name_en ||
-                            product.name_ar
-                      }
+                      {isArabic
+                        ? product.name_ar
+                        : product.name_en ||
+                          product.name_ar}
                     </h3>
 
                     {product.name_en &&
-                      language ===
-                        "ar" && (
+                      isArabic && (
                         <p className="mt-1 text-xs text-gray-600">
                           {
                             product.name_en
@@ -3501,7 +3696,8 @@ export default function Home() {
                       </span>
 
                       <span className="text-xs font-bold text-gray-700">
-                        {product.stock > 0
+                        {product.stock >
+                        0
                           ? `${t.availableNow} ${product.stock}`
                           : t.unavailable}
                       </span>
@@ -3538,11 +3734,15 @@ export default function Home() {
 
       <footer className="bg-gray-900 px-4 py-8 text-center text-white">
         <h2 className="text-xl font-bold">
-          {t.pharmacyName}
+          {
+            t.pharmacyName
+          }
         </h2>
 
         <p className="mt-2 text-gray-300">
-          {t.footerPriority}
+          {
+            t.footerPriority
+          }
         </p>
 
         <p className="mt-4 text-sm text-gray-400">
@@ -3559,12 +3759,16 @@ export default function Home() {
           <div className="absolute inset-y-0 right-0 flex h-full w-[92vw] max-w-md flex-col bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-xl font-bold text-gray-800">
-                {t.shoppingCart}
+                {
+                  t.shoppingCart
+                }
               </h2>
 
               <button
                 onClick={() =>
-                  setCartOpen(false)
+                  setCartOpen(
+                    false
+                  )
                 }
                 className="text-2xl text-gray-600"
               >
@@ -3580,7 +3784,9 @@ export default function Home() {
                   </div>
 
                   <h3 className="mt-5 font-bold text-gray-800">
-                    {t.emptyCart}
+                    {
+                      t.emptyCart
+                    }
                   </h3>
                 </div>
               ) : (
@@ -3620,16 +3826,14 @@ export default function Home() {
 
                             <div className="min-w-0 flex-1">
                               <h3 className="break-words font-bold text-gray-800">
-                                {language ===
-                                "ar"
+                                {isArabic
                                   ? item.name_ar
                                   : item.name_en ||
                                     item.name_ar}
                               </h3>
 
                               {item.name_en &&
-                                language ===
-                                  "ar" && (
+                                isArabic && (
                                   <p
                                     dir="ltr"
                                     className="mt-1 truncate text-xs text-gray-600"
@@ -3728,7 +3932,10 @@ export default function Home() {
                           </div>
 
                           <p className="mt-3 text-sm font-semibold text-gray-700">
-                            {t.total}:{" "}
+                            {
+                              t.total
+                            }
+                            :{" "}
                             {
                               item.price *
                               item.quantity
@@ -3745,7 +3952,9 @@ export default function Home() {
                   <div className="mt-6 rounded-xl bg-green-50 p-4">
                     <div className="flex items-center justify-between font-bold">
                       <span>
-                        {t.cartTotal}
+                        {
+                          t.cartTotal
+                        }
                       </span>
 
                       <span className="text-green-700">
@@ -3764,7 +3973,9 @@ export default function Home() {
                       }
                       className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white"
                     >
-                      {t.checkout}
+                      {
+                        t.checkout
+                      }
                     </button>
                   </div>
                 </>
@@ -3783,12 +3994,16 @@ export default function Home() {
           <div className="mx-auto mt-6 w-full max-w-lg rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between border-b p-4">
               <h2 className="text-xl font-bold text-gray-800">
-                {t.orderData}
+                {
+                  t.orderData
+                }
               </h2>
 
               <button
                 onClick={() =>
-                  setCheckoutOpen(false)
+                  setCheckoutOpen(
+                    false
+                  )
                 }
                 className="text-2xl text-gray-600"
               >
@@ -3799,7 +4014,9 @@ export default function Home() {
             <div className="space-y-4 p-5">
               <div>
                 <label className="mb-2 block font-bold text-gray-800">
-                  {t.fullName}
+                  {
+                    t.fullName
+                  }
                 </label>
 
                 <input
@@ -3807,7 +4024,9 @@ export default function Home() {
                   value={
                     customerName
                   }
-                  onChange={(e) =>
+                  onChange={(
+                    e
+                  ) =>
                     setCustomerName(
                       e.target.value
                     )
@@ -3827,7 +4046,9 @@ export default function Home() {
                 <input
                   type="tel"
                   value={phone}
-                  onChange={(e) =>
+                  onChange={(
+                    e
+                  ) =>
                     setPhone(
                       e.target.value
                     )
@@ -3840,14 +4061,18 @@ export default function Home() {
 
               <div>
                 <label className="mb-2 block font-bold text-gray-800">
-                  {t.address}
+                  {
+                    t.address
+                  }
                 </label>
 
                 <textarea
                   value={
                     address
                   }
-                  onChange={(e) =>
+                  onChange={(
+                    e
+                  ) =>
                     setAddress(
                       e.target.value
                     )
@@ -3869,7 +4094,9 @@ export default function Home() {
                   value={
                     notes
                   }
-                  onChange={(e) =>
+                  onChange={(
+                    e
+                  ) =>
                     setNotes(
                       e.target.value
                     )
@@ -3885,7 +4112,9 @@ export default function Home() {
               <div className="rounded-xl bg-green-50 p-4">
                 <div className="flex items-center justify-between font-bold">
                   <span>
-                    {t.orderTotal}
+                    {
+                      t.orderTotal
+                    }
                   </span>
 
                   <span className="text-green-700">
@@ -3903,7 +4132,9 @@ export default function Home() {
                 onClick={
                   confirmOrder
                 }
-                disabled={ordering}
+                disabled={
+                  ordering
+                }
                 className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white disabled:opacity-60"
               >
                 {ordering
