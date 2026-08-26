@@ -1268,6 +1268,66 @@ export default function Home() {
   useEffect(() => {
     let mounted = true;
 
+    async function initializeAuth() {
+      try {
+        // =================================================
+        // فحص واحد فقط عند فتح الصفحة
+        // =================================================
+
+        const {
+          data: {
+            session,
+          },
+          error,
+        } =
+          await supabase.auth.getSession();
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "INITIAL AUTH CHECK ERROR:",
+            error
+          );
+
+          setLoadingUser(
+            false
+          );
+
+          return;
+        }
+
+        if (session) {
+          applySession(
+            session
+          );
+        } else {
+          clearCustomerState();
+
+          setLoadingUser(
+            false
+          );
+        }
+      } catch (error) {
+        console.error(
+          "INITIAL AUTH CHECK EXCEPTION:",
+          error
+        );
+
+        if (mounted) {
+          setLoadingUser(
+            false
+          );
+        }
+      }
+    }
+
+    // =====================================================
+    // نراقب Auth
+    // =====================================================
+
     const {
       data: {
         subscription,
@@ -1288,9 +1348,7 @@ export default function Home() {
             !!session
           );
 
-          if (
-            session
-          ) {
+          if (session) {
             applySession(
               session
             );
@@ -1307,9 +1365,29 @@ export default function Home() {
             setLoadingUser(
               false
             );
+
+            return;
+          }
+
+          if (
+            event ===
+              "INITIAL_SESSION" &&
+            !session
+          ) {
+            clearCustomerState();
+
+            setLoadingUser(
+              false
+            );
           }
         }
       );
+
+    // =====================================================
+    // البداية
+    // =====================================================
+
+    void initializeAuth();
 
     void loadProducts();
 
@@ -2084,7 +2162,9 @@ export default function Home() {
             change.order_id
           );
 
-      if (updateItemError) {
+      if (
+        updateItemError
+      ) {
         alert(
           isArabic
             ? "فشل تحديث المنتج:\n" +
@@ -2674,17 +2754,23 @@ export default function Home() {
           .insert({
             user_id:
               user.id,
+
             customer_name:
               customerName.trim(),
+
             phone:
               phone.trim(),
+
             address:
               address.trim(),
+
             notes:
               notes.trim() ||
               null,
+
             total:
               cartTotal,
+
             status:
               "جديد",
           })
@@ -2722,20 +2808,28 @@ export default function Home() {
           ) => ({
             order_id:
               order.id,
+
             product_id:
               item.id,
+
             product_name:
               item.name_ar,
+
             price:
               item.price,
+
             requested_quantity:
               item.quantity,
+
             approved_quantity:
               item.quantity,
+
             quantity:
               item.quantity,
+
             customer_approval:
               null,
+
             approval_message:
               null,
           })
