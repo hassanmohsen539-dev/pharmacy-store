@@ -1192,13 +1192,20 @@ export default function Home() {
     loadUser();
     loadProducts();
 
+    // ===================================================
+    // متابعة حالة Auth
+    // مهم:
+    // لا ننفذ استدعاءات Supabase مباشرة داخل callback
+    // لتجنب تعليق Supabase Auth.
+    // ===================================================
+
     const {
       data: {
         subscription,
       },
     } =
       supabase.auth.onAuthStateChange(
-        async (
+        (
           event,
           session
         ) => {
@@ -1210,55 +1217,6 @@ export default function Home() {
             "AUTH STATE CHANGE:",
             event
           );
-
-          if (
-            event ===
-              "SIGNED_IN" ||
-            event ===
-              "TOKEN_REFRESHED" ||
-            event ===
-              "INITIAL_SESSION"
-          ) {
-            if (session?.user) {
-              const user =
-                session.user;
-
-              setUserId(
-                user.id
-              );
-
-              setUserEmail(
-                user.email ??
-                  null
-              );
-
-              const name =
-                user.user_metadata?.name ||
-                user.user_metadata?.full_name ||
-                null;
-
-              setUserName(
-                name
-              );
-
-              try {
-                await Promise.all([
-                  loadNotifications(
-                    user.id,
-                    false
-                  ),
-                  loadQuantityChanges(
-                    user.id
-                  ),
-                ]);
-              } catch (error) {
-                console.error(
-                  "AUTH DATA LOAD ERROR:",
-                  error
-                );
-              }
-            }
-          }
 
           if (
             event ===
@@ -1277,6 +1235,70 @@ export default function Home() {
               null;
 
             locallyDeletedNotificationIdsRef.current.clear();
+
+            return;
+          }
+
+          if (
+            event ===
+              "SIGNED_IN" ||
+            event ===
+              "TOKEN_REFRESHED" ||
+            event ===
+              "INITIAL_SESSION"
+          ) {
+            if (!session?.user) {
+              return;
+            }
+
+            const user =
+              session.user;
+
+            setUserId(
+              user.id
+            );
+
+            setUserEmail(
+              user.email ??
+                null
+            );
+
+            const name =
+              user.user_metadata?.name ||
+              user.user_metadata?.full_name ||
+              null;
+
+            setUserName(
+              name
+            );
+
+            // ننتظر انتهاء callback أولًا
+            // ثم نحمّل بيانات Supabase.
+            window.setTimeout(
+              () => {
+                if (!mounted) {
+                  return;
+                }
+
+                Promise.all([
+                  loadNotifications(
+                    user.id,
+                    false
+                  ),
+                  loadQuantityChanges(
+                    user.id
+                  ),
+                ]).catch(
+                  (error) => {
+                    console.error(
+                      "AUTH DATA LOAD ERROR:",
+                      error
+                    );
+                  }
+                );
+              },
+              0
+            );
           }
         }
       );
