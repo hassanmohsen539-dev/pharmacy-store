@@ -1100,7 +1100,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // المستخدم + متابعة جلسة Supabase
+  // المستخدم
   // =====================================================
 
   useEffect(() => {
@@ -1108,23 +1108,28 @@ export default function Home() {
 
     async function loadUser() {
       try {
+        // =================================================
+        // التعديل المهم:
+        // نستخدم getUser بدل getSession
+        // =================================================
+
         const {
           data: {
-            session,
+            user,
           },
           error:
-            sessionError,
+            userError,
         } =
-          await supabase.auth.getSession();
+          await supabase.auth.getUser();
 
         if (!mounted) {
           return;
         }
 
-        if (sessionError) {
+        if (userError) {
           console.error(
-            "LOAD SESSION ERROR:",
-            sessionError
+            "LOAD USER ERROR:",
+            userError
           );
 
           setUserId(null);
@@ -1132,20 +1137,19 @@ export default function Home() {
           setUserName(null);
           setNotifications([]);
           setQuantityChanges([]);
+
           return;
         }
 
-        if (!session?.user) {
+        if (!user) {
           setUserId(null);
           setUserEmail(null);
           setUserName(null);
           setNotifications([]);
           setQuantityChanges([]);
+
           return;
         }
-
-        const user =
-          session.user;
 
         setUserId(user.id);
 
@@ -1193,10 +1197,7 @@ export default function Home() {
     loadProducts();
 
     // ===================================================
-    // متابعة حالة Auth
-    // مهم:
-    // لا ننفذ استدعاءات Supabase مباشرة داخل callback
-    // لتجنب تعليق Supabase Auth.
+    // متابعة تغييرات حالة الدخول
     // ===================================================
 
     const {
@@ -1272,8 +1273,8 @@ export default function Home() {
               name
             );
 
-            // ننتظر انتهاء callback أولًا
-            // ثم نحمّل بيانات Supabase.
+            // مهم:
+            // لا نستدعي Supabase داخل callback مباشرة.
             window.setTimeout(
               () => {
                 if (!mounted) {
