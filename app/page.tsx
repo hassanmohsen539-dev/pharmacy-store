@@ -6,10 +6,6 @@ import {
   useState,
 } from "react";
 import Link from "next/link";
-import type {
-  AuthChangeEvent,
-  Session,
-} from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { useLanguage } from "./language-provider";
 
@@ -63,7 +59,8 @@ export default function Home() {
     dir,
   } = useLanguage();
 
-  const isArabic = language === "ar";
+  const isArabic =
+    language === "ar";
 
   const t = {
     pharmacyName: isArabic
@@ -150,6 +147,10 @@ export default function Home() {
       ? "🗑️ حذف"
       : "🗑️ Delete",
 
+    needApproval: isArabic
+      ? "⚠️ مطلوب موافقتك"
+      : "⚠️ Your approval is required",
+
     originalQuantity: isArabic
       ? "الكمية الأصلية"
       : "Original quantity",
@@ -221,6 +222,10 @@ export default function Home() {
     noDescription: isArabic
       ? "لا يوجد وصف"
       : "No description",
+
+    available: isArabic
+      ? "متوفر"
+      : "Available",
 
     unavailable: isArabic
       ? "غير متوفر"
@@ -322,6 +327,10 @@ export default function Home() {
       ? "⚠️ مطلوب موافقتك"
       : "⚠️ Your approval is required",
 
+    cancel: isArabic
+      ? "إلغاء"
+      : "Cancel",
+
     enterName: isArabic
       ? "اكتب اسمك"
       : "Enter your name",
@@ -333,6 +342,18 @@ export default function Home() {
     extraNotes: isArabic
       ? "أي ملاحظات إضافية..."
       : "Any additional notes...",
+
+    enterPassword: isArabic
+      ? "اكتب كلمة المرور"
+      : "Enter your password",
+
+    searchNoProducts: isArabic
+      ? "لا توجد منتجات"
+      : "No products found",
+
+    viewOrders: isArabic
+      ? "📦 طلباتي"
+      : "📦 My Orders",
   };
 
   const [products, setProducts] =
@@ -420,6 +441,12 @@ export default function Home() {
     useRef<Set<number>>(
       new Set()
     );
+
+  const authInitializationRef =
+    useRef(false);
+
+  const currentUserIdRef =
+    useRef<string | null>(null);
 
   // =====================================================
   // الصوت
@@ -564,7 +591,6 @@ export default function Home() {
             ? "المتصفح لا يدعم تشغيل صوت التنبيهات."
             : "Your browser does not support notification sounds."
         );
-
         return;
       }
 
@@ -697,9 +723,7 @@ export default function Home() {
     detectNew = false
   ) {
     if (!detectNew) {
-      setNotificationsLoading(
-        true
-      );
+      setNotificationsLoading(true);
     }
 
     try {
@@ -727,7 +751,6 @@ export default function Home() {
           "LOAD NOTIFICATIONS ERROR:",
           error
         );
-
         return;
       }
 
@@ -736,9 +759,7 @@ export default function Home() {
 
       const filtered =
         loaded.filter(
-          (
-            notification: Notification
-          ) =>
+          (notification: Notification) =>
             !locallyDeletedNotificationIdsRef.current.has(
               notification.id
             )
@@ -766,9 +787,7 @@ export default function Home() {
 
         const newNotifications =
           filtered.filter(
-            (
-              notification: Notification
-            ) =>
+            (notification: Notification) =>
               notification.id >
               lastId
           );
@@ -796,8 +815,7 @@ export default function Home() {
 
             lastKnownNotificationIdRef.current =
               Math.max(
-                lastKnownNotificationIdRef.current ??
-                  0,
+                lastKnownNotificationIdRef.current ?? 0,
                 notification.id
               );
           }
@@ -837,14 +855,10 @@ export default function Home() {
     }
 
     setNotifications(
-      (
-        current: Notification[]
-      ) => {
+      (current: Notification[]) => {
         if (
           current.some(
-            (
-              item: Notification
-            ) =>
+            (item: Notification) =>
               item.id ===
               notification.id
           )
@@ -882,8 +896,11 @@ export default function Home() {
   // =====================================================
 
   async function checkCustomerNotifications() {
+    const currentId =
+      currentUserIdRef.current;
+
     if (
-      !userId ||
+      !currentId ||
       checkingNotificationsRef.current
     ) {
       return;
@@ -938,9 +955,7 @@ export default function Home() {
 
       const filtered =
         incoming.filter(
-          (
-            notification: Notification
-          ) =>
+          (notification: Notification) =>
             !locallyDeletedNotificationIdsRef.current.has(
               notification.id
             )
@@ -967,9 +982,7 @@ export default function Home() {
 
       const newNotifications =
         filtered.filter(
-          (
-            notification: Notification
-          ) =>
+          (notification: Notification) =>
             notification.id >
             lastId
         );
@@ -997,14 +1010,13 @@ export default function Home() {
 
           lastKnownNotificationIdRef.current =
             Math.max(
-              lastKnownNotificationIdRef.current ??
-                0,
+              lastKnownNotificationIdRef.current ?? 0,
               notification.id
             );
         }
 
         await loadQuantityChanges(
-          userId
+          currentId
         );
       } else {
         setNotifications(
@@ -1046,20 +1058,13 @@ export default function Home() {
         ordersError ||
         !orders?.length
       ) {
-        setQuantityChanges(
-          []
-        );
-
+        setQuantityChanges([]);
         return;
       }
 
       const orderIds =
         orders.map(
-          (
-            order: {
-              id: number;
-            }
-          ) =>
+          (order: { id: number }) =>
             order.id
         );
 
@@ -1089,7 +1094,6 @@ export default function Home() {
           "LOAD QUANTITY CHANGES ERROR:",
           error
         );
-
         return;
       }
 
@@ -1105,123 +1109,138 @@ export default function Home() {
   }
 
   // =====================================================
-  // المستخدم
+  // تحميل المستخدم والجلسة - النسخة الثابتة
   // =====================================================
+
+  async function applyAuthenticatedUser(
+    userIdValue: string,
+    emailValue: string | null,
+    userMetadata?: {
+      name?: string;
+      full_name?: string;
+    }
+  ) {
+    currentUserIdRef.current =
+      userIdValue;
+
+    setUserId(
+      userIdValue
+    );
+
+    setUserEmail(
+      emailValue
+    );
+
+    const name =
+      userMetadata?.name ||
+      userMetadata?.full_name ||
+      null;
+
+    setUserName(
+      name
+    );
+
+    try {
+      await Promise.all([
+        loadNotifications(
+          userIdValue,
+          false
+        ),
+        loadQuantityChanges(
+          userIdValue
+        ),
+      ]);
+    } catch (error) {
+      console.error(
+        "LOAD AUTH USER DATA ERROR:",
+        error
+      );
+    }
+  }
+
+  function clearAuthenticatedUser() {
+    currentUserIdRef.current =
+      null;
+
+    setUserId(null);
+    setUserEmail(null);
+    setUserName(null);
+    setNotifications([]);
+    setQuantityChanges([]);
+    setNewNotificationAlert(null);
+
+    lastKnownNotificationIdRef.current =
+      null;
+
+    locallyDeletedNotificationIdsRef.current.clear();
+  }
 
   useEffect(() => {
     let mounted = true;
 
-    async function applyUser(
-      user: NonNullable<
-        Session["user"]
-      >
-    ) {
-      if (!mounted) {
+    async function initializeAuth() {
+      if (
+        authInitializationRef.current
+      ) {
         return;
       }
 
-      setUserId(
-        user.id
-      );
+      authInitializationRef.current =
+        true;
 
-      setUserEmail(
-        user.email ??
-          null
-      );
+      setLoadingUser(true);
 
-      const name =
-        user.user_metadata?.name ||
-        user.user_metadata?.full_name ||
-        null;
-
-      setUserName(
-        name
-      );
-
-      try {
-        await Promise.all([
-          loadNotifications(
-            user.id,
-            false
-          ),
-          loadQuantityChanges(
-            user.id
-          ),
-        ]);
-      } catch (error) {
-        console.error(
-          "AUTH USER DATA ERROR:",
-          error
-        );
-      }
-    }
-
-    async function loadUser() {
       try {
         const {
           data: {
-            user,
+            session,
           },
-          error:
-            userError,
+          error: sessionError,
         } =
-          await supabase.auth.getUser();
+          await supabase.auth.getSession();
 
         if (!mounted) {
           return;
         }
 
-        if (userError) {
+        if (
+          sessionError
+        ) {
           console.error(
-            "LOAD USER ERROR:",
-            userError
+            "INITIAL SESSION ERROR:",
+            sessionError
           );
 
-          setUserId(null);
-          setUserEmail(null);
-          setUserName(null);
-          setNotifications([]);
-          setQuantityChanges([]);
-
+          clearAuthenticatedUser();
           return;
         }
 
-        if (user) {
-          await applyUser(
-            user
+        if (session?.user) {
+          await applyAuthenticatedUser(
+            session.user.id,
+            session.user.email ?? null,
+            session.user.user_metadata
           );
         } else {
-          setUserId(null);
-          setUserEmail(null);
-          setUserName(null);
-          setNotifications([]);
-          setQuantityChanges([]);
+          clearAuthenticatedUser();
         }
       } catch (error) {
         console.error(
-          "LOAD USER EXCEPTION:",
+          "INITIAL AUTH ERROR:",
           error
         );
 
         if (mounted) {
-          setUserId(null);
-          setUserEmail(null);
-          setUserName(null);
-          setNotifications([]);
-          setQuantityChanges([]);
+          clearAuthenticatedUser();
         }
       } finally {
         if (mounted) {
-          setLoadingUser(
-            false
-          );
+          setLoadingUser(false);
         }
       }
     }
 
-    void loadUser();
-
-    void loadProducts();
+    void initializeAuth();
 
     const {
       data: {
@@ -1230,81 +1249,88 @@ export default function Home() {
     } =
       supabase.auth.onAuthStateChange(
         (
-          event: AuthChangeEvent,
-          session: Session | null
+          event,
+          session
         ) => {
           if (!mounted) {
             return;
           }
 
           console.log(
-            "AUTH STATE CHANGE:",
-            event
+            "CUSTOMER AUTH STATE:",
+            event,
+            !!session
           );
-
-          if (
-            event ===
-            "SIGNED_OUT"
-          ) {
-            setUserId(null);
-            setUserEmail(null);
-            setUserName(null);
-            setNotifications([]);
-            setQuantityChanges([]);
-            setNewNotificationAlert(
-              null
-            );
-
-            lastKnownNotificationIdRef.current =
-              null;
-
-            locallyDeletedNotificationIdsRef.current.clear();
-
-            return;
-          }
 
           if (
             session?.user
           ) {
+            currentUserIdRef.current =
+              session.user.id;
+
             setUserId(
               session.user.id
             );
 
             setUserEmail(
-              session.user.email ??
+              session.user.email ?? null
+            );
+
+            const metadata =
+              session.user
+                .user_metadata || {};
+
+            setUserName(
+              metadata.name ||
+                metadata.full_name ||
                 null
             );
 
-            const name =
-              session.user.user_metadata?.name ||
-              session.user.user_metadata?.full_name ||
-              null;
-
-            setUserName(
-              name
+            setLoadingUser(
+              false
             );
 
-            window.setTimeout(
-              () => {
-                if (!mounted) {
-                  return;
-                }
+            if (
+              event ===
+                "SIGNED_IN" ||
+              event ===
+                "TOKEN_REFRESHED" ||
+              event ===
+                "INITIAL_SESSION"
+            ) {
+              window.setTimeout(
+                () => {
+                  if (
+                    !mounted
+                  ) {
+                    return;
+                  }
 
-                void Promise.all([
-                  loadNotifications(
+                  void loadNotifications(
                     session.user.id,
                     false
-                  ),
-                  loadQuantityChanges(
+                  );
+
+                  void loadQuantityChanges(
                     session.user.id
-                  ),
-                ]);
-              },
-              0
+                  );
+                },
+                0
+              );
+            }
+          } else if (
+            event ===
+              "SIGNED_OUT"
+          ) {
+            clearAuthenticatedUser();
+            setLoadingUser(
+              false
             );
           }
         }
       );
+
+    loadProducts();
 
     return () => {
       mounted = false;
@@ -1313,7 +1339,7 @@ export default function Home() {
   }, []);
 
   // =====================================================
-  // تحديث تلقائي
+  // تحديث تلقائي للإشعارات
   // =====================================================
 
   useEffect(() => {
@@ -1355,10 +1381,14 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "INSERT",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${userId}`,
+            event:
+              "INSERT",
+            schema:
+              "public",
+            table:
+              "notifications",
+            filter:
+              `user_id=eq.${userId}`,
           },
           async (
             payload: RealtimeNotificationPayload
@@ -1383,10 +1413,14 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "UPDATE",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${userId}`,
+            event:
+              "UPDATE",
+            schema:
+              "public",
+            table:
+              "notifications",
+            filter:
+              `user_id=eq.${userId}`,
           },
           async () => {
             await loadNotifications(
@@ -1398,10 +1432,14 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "DELETE",
-            schema: "public",
-            table: "notifications",
-            filter: `user_id=eq.${userId}`,
+            event:
+              "DELETE",
+            schema:
+              "public",
+            table:
+              "notifications",
+            filter:
+              `user_id=eq.${userId}`,
           },
           async () => {
             await loadNotifications(
@@ -1413,9 +1451,12 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "*",
-            schema: "public",
-            table: "order_quantity_changes",
+            event:
+              "*",
+            schema:
+              "public",
+            table:
+              "order_quantity_changes",
           },
           async () => {
             await loadQuantityChanges(
@@ -1426,10 +1467,14 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "*",
-            schema: "public",
-            table: "orders",
-            filter: `user_id=eq.${userId}`,
+            event:
+              "*",
+            schema:
+              "public",
+            table:
+              "orders",
+            filter:
+              `user_id=eq.${userId}`,
           },
           async () => {
             await checkCustomerNotifications();
@@ -1442,9 +1487,12 @@ export default function Home() {
         .on(
           "postgres_changes",
           {
-            event: "*",
-            schema: "public",
-            table: "products",
+            event:
+              "*",
+            schema:
+              "public",
+            table:
+              "products",
           },
           async () => {
             await loadProducts();
@@ -1452,7 +1500,7 @@ export default function Home() {
         )
         .subscribe(
           (
-            status: string
+            status
           ) => {
             console.log(
               "CUSTOMER REALTIME STATUS:",
@@ -1484,23 +1532,10 @@ export default function Home() {
           ? "حدث خطأ أثناء تسجيل الخروج"
           : "An error occurred while signing out."
       );
-
       return;
     }
 
-    setUserId(null);
-    setUserEmail(null);
-    setUserName(null);
-    setNotifications([]);
-    setQuantityChanges([]);
-    setNewNotificationAlert(
-      null
-    );
-
-    lastKnownNotificationIdRef.current =
-      null;
-
-    locallyDeletedNotificationIdsRef.current.clear();
+    clearAuthenticatedUser();
 
     alert(
       isArabic
@@ -1520,9 +1555,7 @@ export default function Home() {
       return;
     }
 
-    const {
-      error,
-    } =
+    const { error } =
       await supabase
         .from("notifications")
         .update({
@@ -1542,14 +1575,11 @@ export default function Home() {
         "MARK NOTIFICATION ERROR:",
         error
       );
-
       return;
     }
 
     setNotifications(
-      (
-        current: Notification[]
-      ) =>
+      (current: Notification[]) =>
         current.map(
           (
             notification: Notification
@@ -1594,9 +1624,7 @@ export default function Home() {
       return;
     }
 
-    const {
-      error,
-    } =
+    const { error } =
       await supabase
         .from("notifications")
         .update({
@@ -1617,21 +1645,17 @@ export default function Home() {
           ? "حدث خطأ أثناء تحديث الإشعارات."
           : "An error occurred while updating notifications."
       );
-
       return;
     }
 
     setNotifications(
-      (
-        current: Notification[]
-      ) =>
+      (current: Notification[]) =>
         current.map(
           (
             notification: Notification
           ) => ({
             ...notification,
-            is_read:
-              true,
+            is_read: true,
           })
         )
     );
@@ -1664,9 +1688,7 @@ export default function Home() {
     );
 
     setNotifications(
-      (
-        current: Notification[]
-      ) =>
+      (current: Notification[]) =>
         current.filter(
           (
             notification: Notification
@@ -1680,14 +1702,10 @@ export default function Home() {
       newNotificationAlert?.id ===
       notificationId
     ) {
-      setNewNotificationAlert(
-        null
-      );
+      setNewNotificationAlert(null);
     }
 
-    const {
-      error,
-    } =
+    const { error } =
       await supabase
         .from("notifications")
         .delete()
@@ -1722,6 +1740,8 @@ export default function Home() {
           : "Failed to delete notification:\n" +
               error.message
       );
+
+      return;
     }
   }
 
@@ -1757,22 +1777,16 @@ export default function Home() {
       );
 
     ids.forEach(
-      (
-        id
-      ) =>
+      (id) =>
         locallyDeletedNotificationIdsRef.current.add(
           id
         )
     );
 
     setNotifications([]);
-    setNewNotificationAlert(
-      null
-    );
+    setNewNotificationAlert(null);
 
-    const {
-      error,
-    } =
+    const { error } =
       await supabase
         .from("notifications")
         .delete()
@@ -1788,9 +1802,7 @@ export default function Home() {
       );
 
       ids.forEach(
-        (
-          id
-        ) =>
+        (id) =>
           locallyDeletedNotificationIdsRef.current.delete(
             id
           )
@@ -1808,6 +1820,8 @@ export default function Home() {
           : "Failed to delete notifications:\n" +
               error.message
       );
+
+      return;
     }
   }
 
@@ -1822,9 +1836,7 @@ export default function Home() {
     message: string
   ) {
     try {
-      const {
-        error,
-      } =
+      const { error } =
         await supabase.rpc(
           "notify_admins",
           {
@@ -1886,20 +1898,16 @@ export default function Home() {
             ? "يجب تسجيل الدخول أولاً."
             : "You must log in first."
         );
-
         return;
       }
 
       const {
         data: order,
-        error:
-          orderError,
+        error: orderError,
       } =
         await supabase
           .from("orders")
-          .select(
-            "id,user_id"
-          )
+          .select("id,user_id")
           .eq(
             "id",
             change.order_id
@@ -1919,7 +1927,6 @@ export default function Home() {
             ? "لا يمكن تنفيذ هذا التعديل."
             : "This quantity change cannot be processed."
         );
-
         return;
       }
 
@@ -1955,7 +1962,6 @@ export default function Home() {
             : "An error occurred while checking the quantity change:\n" +
                 changeError.message
         );
-
         return;
       }
 
@@ -1973,13 +1979,9 @@ export default function Home() {
         return;
       }
 
-      const {
-        data: item,
-      } =
+      const { data: item } =
         await supabase
-          .from(
-            "order_items"
-          )
+          .from("order_items")
           .select("*")
           .eq(
             "id",
@@ -1997,7 +1999,6 @@ export default function Home() {
             ? "تعذر العثور على المنتج داخل الطلب."
             : "The product could not be found inside the order."
         );
-
         return;
       }
 
@@ -2023,9 +2024,7 @@ export default function Home() {
           updateItemError,
       } =
         await supabase
-          .from(
-            "order_items"
-          )
+          .from("order_items")
           .update({
             quantity:
               finalQuantity,
@@ -2055,7 +2054,6 @@ export default function Home() {
             : "Failed to update product:\n" +
                 updateItemError.message
         );
-
         return;
       }
 
@@ -2090,18 +2088,14 @@ export default function Home() {
             : "Failed to save your response:\n" +
                 updateChangeError.message
         );
-
         return;
       }
 
       const {
-        data:
-          allItems,
+        data: allItems,
       } =
         await supabase
-          .from(
-            "order_items"
-          )
+          .from("order_items")
           .select(
             "price,quantity"
           )
@@ -2111,18 +2105,12 @@ export default function Home() {
           );
 
       const newTotal =
-        (
-          allItems || []
-        ).reduce(
+        (allItems || []).reduce(
           (
             sum: number,
             orderItem: {
-              price:
-                | number
-                | string;
-              quantity:
-                | number
-                | string;
+              price: number | string;
+              quantity: number | string;
             }
           ) =>
             sum +
@@ -2218,7 +2206,6 @@ export default function Home() {
           ? "هذا المنتج غير متوفر حاليًا."
           : "This product is currently out of stock."
       );
-
       return;
     }
 
@@ -2300,8 +2287,7 @@ export default function Home() {
             item: CartItem
           ) => {
             if (
-              item.id !==
-              id
+              item.id !== id
             ) {
               return item;
             }
@@ -2442,81 +2428,28 @@ export default function Home() {
       }
     );
 
-  // =====================================================
-  // فتح checkout
-  // =====================================================
+  function openCheckout() {
+    if (!userId) {
+      alert(
+        isArabic
+          ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
+          : "You must log in first to complete the order."
+      );
+      return;
+    }
 
-  async function openCheckout() {
     if (!cart.length) {
       alert(
         isArabic
           ? "السلة فارغة، أضف منتج أولاً"
           : "Your cart is empty. Add a product first."
       );
-
       return;
     }
 
-    try {
-      const {
-        data: {
-          user,
-        },
-        error,
-      } =
-        await supabase.auth.getUser();
-
-      if (error) {
-        console.error(
-          "CHECKOUT AUTH ERROR:",
-          error
-        );
-      }
-
-      if (!user) {
-        alert(
-          isArabic
-            ? "يجب تسجيل الدخول أولاً لإتمام الطلب."
-            : "You must log in first to complete the order."
-        );
-
-        return;
-      }
-
-      // تحديث الحالة المحلية لو كانت متأخرة
-      setUserId(
-        user.id
-      );
-
-      setUserEmail(
-        user.email ??
-          null
-      );
-
-      setCartOpen(
-        false
-      );
-
-      setCheckoutOpen(
-        true
-      );
-    } catch (error) {
-      console.error(
-        "OPEN CHECKOUT ERROR:",
-        error
-      );
-
-      alert(
-        isArabic
-          ? "تعذر التحقق من تسجيل الدخول. حاول مرة أخرى."
-          : "Unable to verify your login. Please try again."
-      );
-    }
+    setCartOpen(false);
+    setCheckoutOpen(true);
   }
-
-  // =====================================================
-  // تأكيد الطلب
-  // =====================================================
 
   async function confirmOrder() {
     if (ordering) {
@@ -2533,7 +2466,6 @@ export default function Home() {
           ? "من فضلك املأ الاسم ورقم الهاتف والعنوان"
           : "Please fill in your name, phone number, and address."
       );
-
       return;
     }
 
@@ -2543,19 +2475,15 @@ export default function Home() {
           ? "السلة فارغة"
           : "Your cart is empty."
       );
-
       return;
     }
 
-    setOrdering(
-      true
-    );
+    setOrdering(true);
 
     try {
-      // =================================================
-      // نتحقق من المستخدم الحقيقي من Supabase
-      // بدل الاعتماد على userId الخاص بالـState
-      // =================================================
+      // ===================================================
+      // تأكيد الجلسة فعليًا قبل الطلب
+      // ===================================================
 
       let {
         data: {
@@ -2564,8 +2492,6 @@ export default function Home() {
       } =
         await supabase.auth.getUser();
 
-      // محاولة إضافية للحصول على Session
-      // إذا كان الـtoken يحتاج لحظة بسيطة
       if (!user) {
         const {
           data: {
@@ -2574,36 +2500,35 @@ export default function Home() {
         } =
           await supabase.auth.getSession();
 
-        if (session?.user) {
+        if (
+          session?.user
+        ) {
           user =
             session.user;
+
+          currentUserIdRef.current =
+            user.id;
+
+          setUserId(
+            user.id
+          );
+
+          setUserEmail(
+            user.email ?? null
+          );
         }
       }
 
       if (!user) {
-        setOrdering(
-          false
-        );
-
         alert(
           isArabic
-            ? "جلسة تسجيل الدخول غير متاحة حاليًا. أعد فتح الصفحة ثم حاول مرة أخرى."
-            : "Your login session is not available right now. Reload the page and try again."
+            ? "الجلسة غير جاهزة بعد. حاول مرة أخرى."
+            : "Your login session is not ready yet. Please try again."
         );
 
+        setOrdering(false);
         return;
       }
-
-      // مهم جدًا:
-      // تحديث الـstate قبل تكملة الطلب
-      setUserId(
-        user.id
-      );
-
-      setUserEmail(
-        user.email ??
-          null
-      );
 
       const productIds =
         cart.map(
@@ -2630,27 +2555,11 @@ export default function Home() {
           );
 
       if (stockError) {
-        console.error(
-          "STOCK CHECK ERROR:",
-          stockError
-        );
-
         alert(
           isArabic
             ? "حدث خطأ أثناء التأكد من المخزون."
             : "An error occurred while checking stock."
         );
-
-        return;
-      }
-
-      if (!latestProducts) {
-        alert(
-          isArabic
-            ? "تعذر تحميل بيانات المنتجات."
-            : "Unable to load product data."
-        );
-
         return;
       }
 
@@ -2658,7 +2567,7 @@ export default function Home() {
         const cartItem of cart
       ) {
         const latest =
-          latestProducts.find(
+          latestProducts?.find(
             (
               product: Product
             ) =>
@@ -2672,9 +2581,6 @@ export default function Home() {
               ? `المنتج "${cartItem.name_ar}" لم يعد موجودًا.`
               : `The product "${cartItem.name_en || cartItem.name_ar}" is no longer available.`
           );
-
-          await loadProducts();
-
           return;
         }
 
@@ -2689,19 +2595,13 @@ export default function Home() {
           );
 
           await loadProducts();
-
           return;
         }
       }
 
-      // =================================================
-      // إنشاء الطلب
-      // =================================================
-
       const {
         data: order,
-        error:
-          orderError,
+        error: orderError,
       } =
         await supabase
           .from("orders")
@@ -2722,17 +2622,10 @@ export default function Home() {
             status:
               "جديد",
           })
-          .select(
-            "id"
-          )
+          .select("id")
           .single();
 
       if (orderError) {
-        console.error(
-          "CREATE ORDER ERROR:",
-          orderError
-        );
-
         alert(
           isArabic
             ? "حدث خطأ أثناء إنشاء الطلب:\n\n" +
@@ -2740,7 +2633,6 @@ export default function Home() {
             : "An error occurred while creating the order:\n\n" +
                 orderError.message
         );
-
         return;
       }
 
@@ -2750,13 +2642,8 @@ export default function Home() {
             ? "تم إنشاء الطلب ولكن لم يتم الحصول على رقم الطلب."
             : "The order was created, but the order number was not returned."
         );
-
         return;
       }
-
-      // =================================================
-      // تفاصيل الطلب
-      // =================================================
 
       const orderItems =
         cart.map(
@@ -2767,35 +2654,25 @@ export default function Home() {
               order.id,
             product_id:
               item.id,
-
-            // نحافظ على الاسم العربي في قاعدة البيانات
-            // حتى يظل الاسم الأصلي محفوظًا
             product_name:
               item.name_ar,
-
             price:
               item.price,
-
             requested_quantity:
               item.quantity,
-
             approved_quantity:
               item.quantity,
-
             quantity:
               item.quantity,
-
             customer_approval:
               null,
-
             approval_message:
               null,
           })
         );
 
       const {
-        error:
-          itemsError,
+        error: itemsError,
       } =
         await supabase
           .from(
@@ -2806,11 +2683,6 @@ export default function Home() {
           );
 
       if (itemsError) {
-        console.error(
-          "CREATE ORDER ITEMS ERROR:",
-          itemsError
-        );
-
         alert(
           isArabic
             ? "حدث خطأ في حفظ تفاصيل المنتجات:\n\n" +
@@ -2819,7 +2691,6 @@ export default function Home() {
                 itemsError.message
         );
 
-        // محاولة حذف الطلب الفارغ
         await supabase
           .from("orders")
           .delete()
@@ -2835,25 +2706,8 @@ export default function Home() {
         return;
       }
 
-      // =================================================
-      // نجاح الطلب
-      // =================================================
-
-      const orderCustomerName =
-        customerName.trim();
-
-      const orderTotal =
-        cartTotal;
-
       setCart([]);
-
-      setCheckoutOpen(
-        false
-      );
-
-      setCartOpen(
-        false
-      );
+      setCheckoutOpen(false);
 
       setCustomerName("");
       setPhone("");
@@ -2863,22 +2717,22 @@ export default function Home() {
       alert(
         isArabic
           ? "تم استلام طلبك بنجاح يا " +
-              orderCustomerName +
+              customerName.trim() +
               " 🎉\n\n" +
               "رقم الطلب: " +
               order.id +
               "\n" +
               "الإجمالي: " +
-              orderTotal +
+              cartTotal +
               " جنيه"
           : "Your order was received successfully, " +
-              orderCustomerName +
+              customerName.trim() +
               " 🎉\n\n" +
               "Order number: " +
               order.id +
               "\n" +
               "Total: " +
-              orderTotal +
+              cartTotal +
               " EGP"
       );
 
@@ -2891,18 +2745,16 @@ export default function Home() {
 
       alert(
         isArabic
-          ? "حدث خطأ غير متوقع أثناء إرسال الطلب."
-          : "An unexpected error occurred while sending the order."
+          ? "حدث خطأ غير متوقع."
+          : "An unexpected error occurred."
       );
     } finally {
-      setOrdering(
-        false
-      );
+      setOrdering(false);
     }
   }
 
   // =====================================================
-  // Loading المنتجات
+  // Loading
   // =====================================================
 
   if (productsLoading) {
@@ -2917,15 +2769,11 @@ export default function Home() {
           </div>
 
           <h1 className="mt-4 text-2xl font-bold text-green-700">
-            {
-              t.pharmacyName
-            }
+            {t.pharmacyName}
           </h1>
 
           <p className="mt-4 text-lg font-bold text-gray-800">
-            {
-              t.loadingProducts
-            }
+            {t.loadingProducts}
           </p>
         </div>
       </main>
@@ -2933,7 +2781,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // خطأ المنتجات
+  // Products Error
   // =====================================================
 
   if (productsError) {
@@ -2948,18 +2796,14 @@ export default function Home() {
           </div>
 
           <h1 className="mt-4 text-2xl font-bold text-red-600">
-            {
-              t.loadProductsError
-            }
+            {t.loadProductsError}
           </h1>
 
           <div
             dir="ltr"
             className="mt-5 rounded-xl bg-red-50 p-4 text-left text-sm text-red-700"
           >
-            {
-              productsError
-            }
+            {productsError}
           </div>
 
           <button
@@ -2993,11 +2837,9 @@ export default function Home() {
               </div>
 
               <h2 className="mt-4 text-3xl font-black text-blue-700">
-                {
-                  isArabic
-                    ? "إشعار جديد!"
-                    : "New notification!"
-                }
+                {isArabic
+                  ? "إشعار جديد!"
+                  : "New notification!"}
               </h2>
 
               <h3 className="mt-4 text-xl font-bold text-gray-800">
@@ -3022,9 +2864,7 @@ export default function Home() {
                   }
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3 font-bold text-gray-800"
                 >
-                  {
-                    t.close
-                  }
+                  {t.close}
                 </button>
 
                 <button
@@ -3040,9 +2880,7 @@ export default function Home() {
                   }}
                   className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white"
                 >
-                  {
-                    t.showNotifications
-                  }
+                  {t.showNotifications}
                 </button>
               </div>
             </div>
@@ -3058,15 +2896,11 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="text-center sm:text-right">
             <h1 className="text-2xl font-bold text-green-700">
-              {
-                t.pharmacyName
-              }
+              {t.pharmacyName}
             </h1>
 
             <p className="text-sm text-gray-600">
-              {
-                t.priority
-              }
+              {t.priority}
             </p>
           </div>
 
@@ -3078,100 +2912,73 @@ export default function Home() {
               }
               className="rounded-lg border border-purple-600 bg-white px-3 py-2 text-sm font-bold text-purple-700 shadow-sm hover:bg-purple-50"
             >
-              🌐{" "}
-              {
-                t.languageButton
-              }
+              🌐 {t.languageButton}
             </button>
 
-            {
-              loadingUser ? (
-                <div className="rounded-lg border px-4 py-2 text-sm text-gray-500">
-                  {
-                    t.loading
-                  }
-                </div>
-              ) : userEmail ? (
-                <>
-                  <a
-                    href="/orders"
-                    className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700"
-                  >
-                    {
-                      t.myOrders
-                    }
-                  </a>
-
-                  <button
-                    onClick={() =>
-                      setNotificationsOpen(
-                        true
-                      )
-                    }
-                    className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600"
-                  >
-                    {
-                      t.notifications
-                    }
-
-                    {
-                      unreadNotifications >
-                        0 && (
-                        <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                          {
-                            unreadNotifications
-                          }
-                        </span>
-                      )
-                    }
-                  </button>
-
-                  <button
-                    onClick={
-                      handleLogout
-                    }
-                    className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600"
-                  >
-                    {
-                      t.logout
-                    }
-                  </button>
-                </>
-              ) : (
+            {loadingUser ? (
+              <div className="rounded-lg border px-4 py-2 text-sm text-gray-500">
+                {t.loading}
+              </div>
+            ) : userEmail ? (
+              <>
                 <a
-                  href="/login"
-                  className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
+                  href="/orders"
+                  className="rounded-lg border border-green-600 px-3 py-2 text-sm font-semibold text-green-700"
                 >
-                  👤{" "}
-                  {
-                    t.login
-                  }
+                  {t.myOrders}
                 </a>
-              )
-            }
+
+                <button
+                  onClick={() =>
+                    setNotificationsOpen(
+                      true
+                    )
+                  }
+                  className="relative rounded-lg border border-blue-500 px-3 py-2 text-sm font-semibold text-blue-600"
+                >
+                  {t.notifications}
+
+                  {unreadNotifications >
+                    0 && (
+                    <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                      {
+                        unreadNotifications
+                      }
+                    </span>
+                  )}
+                </button>
+
+                <button
+                  onClick={
+                    handleLogout
+                  }
+                  className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600"
+                >
+                  {t.logout}
+                </button>
+              </>
+            ) : (
+              <a
+                href="/login"
+                className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
+              >
+                👤 {t.login}
+              </a>
+            )}
 
             <button
               onClick={() =>
-                setCartOpen(
-                  true
-                )
+                setCartOpen(true)
               }
               className="relative rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white"
             >
-              {
-                t.cart
-              }
+              {t.cart}
 
-              {
-                cartCount >
-                  0 && (
-                  <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
-                    {
-                      cartCount
-                    }
-                  </span>
-                )
-              }
+              {cartCount > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-6 min-w-6 items-center justify-center rounded-full bg-red-500 px-1 text-xs font-bold text-white">
+                  {cartCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -3183,26 +2990,18 @@ export default function Home() {
 
       <section className="w-full bg-green-700 px-4 py-10 text-center text-white">
         <h2 className="text-3xl font-bold sm:text-4xl">
-          {
-            t.welcome
-          }
+          {t.welcome}
         </h2>
 
         <p className="mx-auto mt-4 max-w-2xl text-green-100">
-          {
-            t.heroText
-          }
+          {t.heroText}
         </p>
 
         <div className="mx-auto mt-8 flex w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-lg">
           <input
             type="text"
-            value={
-              search
-            }
-            onChange={(
-              e
-            ) =>
+            value={search}
+            onChange={(e) =>
               setSearch(
                 e.target.value
               )
@@ -3217,10 +3016,7 @@ export default function Home() {
             type="button"
             className="bg-green-600 px-5 py-3 font-semibold text-white"
           >
-            {
-              t.search
-            }{" "}
-            🔎
+            {t.search} 🔎
           </button>
         </div>
       </section>
@@ -3235,15 +3031,11 @@ export default function Home() {
             <div className="flex items-center justify-between border-b p-4">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">
-                  {
-                    t.notifications
-                  }
+                  {t.notifications}
                 </h2>
 
                 <p className="mt-1 text-xs text-gray-600">
-                  {
-                    t.notificationUpdates
-                  }
+                  {t.notificationUpdates}
                 </p>
               </div>
 
@@ -3272,11 +3064,9 @@ export default function Home() {
                       : "bg-orange-500 text-white"
                   }`}
                 >
-                  {
-                    soundEnabled
-                      ? t.soundEnabled
-                      : t.enableSound
-                  }
+                  {soundEnabled
+                    ? t.soundEnabled
+                    : t.enableSound}
                 </button>
 
                 <button
@@ -3290,9 +3080,7 @@ export default function Home() {
                   }
                   className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white disabled:opacity-50"
                 >
-                  {
-                    t.markAllRead
-                  }
+                  {t.markAllRead}
                 </button>
 
                 <button
@@ -3305,281 +3093,237 @@ export default function Home() {
                   }
                   className="rounded-xl border border-red-500 bg-white px-4 py-3 font-bold text-red-600 disabled:opacity-50"
                 >
-                  {
-                    t.deleteAll
-                  }
+                  {t.deleteAll}
                 </button>
               </div>
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
-              {
-                notificationsLoading ? (
-                  <div className="py-10 text-center font-bold text-green-700">
-                    {
-                      t.loading
-                    }
+              {notificationsLoading ? (
+                <div className="py-10 text-center font-bold text-green-700">
+                  {t.loading}
+                </div>
+              ) : !notifications.length ? (
+                <div className="rounded-xl bg-gray-50 p-10 text-center">
+                  <div className="text-5xl">
+                    🔕
                   </div>
-                ) : !notifications.length ? (
-                  <div className="rounded-xl bg-gray-50 p-10 text-center">
-                    <div className="text-5xl">
-                      🔕
-                    </div>
 
-                    <p className="mt-4 font-bold text-gray-800">
-                      {
-                        t.noNotifications
-                      }
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {
-                      notifications.map(
-                        (
-                          notification: Notification
-                        ) => {
-                          const relatedChange =
-                            notification.type ===
-                              "quantity_change" &&
-                            notification.order_item_id
-                              ? quantityChanges.find(
-                                  (
-                                    change: QuantityChange
-                                  ) =>
-                                    change.order_item_id ===
-                                      notification.order_item_id &&
-                                    change.order_id ===
-                                      notification.order_id
-                                )
-                              : null;
+                  <p className="mt-4 font-bold text-gray-800">
+                    {t.noNotifications}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {notifications.map(
+                    (
+                      notification: Notification
+                    ) => {
+                      const relatedChange =
+                        notification.type ===
+                          "quantity_change" &&
+                        notification.order_item_id
+                          ? quantityChanges.find(
+                              (
+                                change: QuantityChange
+                              ) =>
+                                change.order_item_id ===
+                                  notification.order_item_id &&
+                                change.order_id ===
+                                  notification.order_id
+                            )
+                          : null;
 
-                          const isQuantityNotification =
-                            notification.type ===
-                            "quantity_change";
+                      const isQuantityNotification =
+                        notification.type ===
+                        "quantity_change";
 
-                          return (
-                            <div
-                              key={
-                                notification.id
-                              }
-                              className={`rounded-xl border-2 p-4 ${
-                                notification.is_read
-                                  ? "border-gray-200 bg-white"
-                                  : "border-blue-300 bg-blue-50"
-                              }`}
-                            >
-                              <div className="flex gap-3">
-                                <div className="text-2xl">
-                                  {
-                                    notification.type ===
-                                    "quantity_change"
-                                      ? "📦"
-                                      : notification.type ===
-                                        "order_status"
-                                      ? "🚚"
-                                      : "🔔"
-                                  }
+                      return (
+                        <div
+                          key={
+                            notification.id
+                          }
+                          className={`rounded-xl border-2 p-4 ${
+                            notification.is_read
+                              ? "border-gray-200 bg-white"
+                              : "border-blue-300 bg-blue-50"
+                          }`}
+                        >
+                          <div className="flex gap-3">
+                            <div className="text-2xl">
+                              {notification.type ===
+                              "quantity_change"
+                                ? "📦"
+                                : notification.type ===
+                                  "order_status"
+                                ? "🚚"
+                                : "🔔"}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <h3 className="break-words font-bold text-gray-800">
+                                    {
+                                      notification.title
+                                    }
+                                  </h3>
+
+                                  <p className="mt-2 break-words text-gray-800">
+                                    {
+                                      notification.message
+                                    }
+                                  </p>
+
+                                  <p className="mt-2 text-xs text-gray-600">
+                                    {new Date(
+                                      notification.created_at
+                                    ).toLocaleString(
+                                      isArabic
+                                        ? "ar-EG"
+                                        : "en-US"
+                                    )}
+                                  </p>
                                 </div>
 
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <h3 className="break-words font-bold text-gray-800">
-                                        {
-                                          notification.title
-                                        }
-                                      </h3>
-
-                                      <p className="mt-2 break-words text-gray-800">
-                                        {
-                                          notification.message
-                                        }
-                                      </p>
-
-                                      <p className="mt-2 text-xs text-gray-600">
-                                        {
-                                          new Date(
-                                            notification.created_at
-                                          ).toLocaleString(
-                                            isArabic
-                                              ? "ar-EG"
-                                              : "en-US"
-                                          )
-                                        }
-                                      </p>
-                                    </div>
-
-                                    <div className="flex shrink-0 flex-col gap-2">
-                                      {
-                                        !notification.is_read && (
-                                          <button
-                                            type="button"
-                                            onClick={() =>
-                                              markNotificationAsRead(
-                                                notification.id
-                                              )
-                                            }
-                                            className="rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700"
-                                          >
-                                            {
-                                              t.new
-                                            }
-                                          </button>
+                                <div className="flex shrink-0 flex-col gap-2">
+                                  {!notification.is_read && (
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        markNotificationAsRead(
+                                          notification.id
                                         )
                                       }
+                                      className="rounded-lg bg-blue-100 px-3 py-1.5 text-xs font-bold text-blue-700"
+                                    >
+                                      {t.new}
+                                    </button>
+                                  )}
 
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      deleteNotification(
+                                        notification.id
+                                      )
+                                    }
+                                    className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600"
+                                  >
+                                    {t.delete}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isQuantityNotification &&
+                                relatedChange &&
+                                relatedChange.status ===
+                                  "pending" && (
+                                  <div className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-4">
+                                    <p className="font-bold text-orange-700">
+                                      {t.approvalMessage}
+                                    </p>
+
+                                    <div className="mt-3 grid grid-cols-2 gap-3">
+                                      <div className="rounded-lg bg-white p-3 text-center">
+                                        <p className="text-xs text-gray-600">
+                                          {t.originalQuantity}
+                                        </p>
+
+                                        <p className="text-2xl font-black text-blue-700">
+                                          {
+                                            relatedChange.old_quantity
+                                          }
+                                        </p>
+                                      </div>
+
+                                      <div className="rounded-lg bg-white p-3 text-center">
+                                        <p className="text-xs text-gray-600">
+                                          {t.proposedQuantity}
+                                        </p>
+
+                                        <p className="text-2xl font-black text-orange-600">
+                                          {
+                                            relatedChange.new_quantity
+                                          }
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
                                       <button
-                                        type="button"
                                         onClick={() =>
-                                          deleteNotification(
-                                            notification.id
+                                          respondToQuantityChange(
+                                            relatedChange,
+                                            true
                                           )
                                         }
-                                        className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-bold text-red-600"
-                                      >
-                                        {
-                                          t.delete
+                                        disabled={
+                                          respondingChange ===
+                                          relatedChange.id
                                         }
+                                        className="flex-1 rounded-xl bg-green-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+                                      >
+                                        {respondingChange ===
+                                        relatedChange.id
+                                          ? t.saving
+                                          : t.approve}
+                                      </button>
+
+                                      <button
+                                        onClick={() =>
+                                          respondToQuantityChange(
+                                            relatedChange,
+                                            false
+                                          )
+                                        }
+                                        disabled={
+                                          respondingChange ===
+                                          relatedChange.id
+                                        }
+                                        className="flex-1 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50"
+                                      >
+                                        {respondingChange ===
+                                        relatedChange.id
+                                          ? t.saving
+                                          : t.reject}
                                       </button>
                                     </div>
                                   </div>
+                                )}
 
-                                  {
-                                    isQuantityNotification &&
-                                    relatedChange &&
-                                    relatedChange.status ===
-                                      "pending" && (
-                                      <div className="mt-4 rounded-xl border-2 border-orange-300 bg-orange-50 p-4">
-                                        <p className="font-bold text-orange-700">
-                                          {
-                                            t.approvalMessage
-                                          }
-                                        </p>
+                              {isQuantityNotification &&
+                                relatedChange?.status ===
+                                  "approved" && (
+                                  <div className="mt-4 rounded-xl border-2 border-green-300 bg-green-50 p-3 text-center font-bold text-green-700">
+                                    {t.approved}
+                                  </div>
+                                )}
 
-                                        <div className="mt-3 grid grid-cols-2 gap-3">
-                                          <div className="rounded-lg bg-white p-3 text-center">
-                                            <p className="text-xs text-gray-600">
-                                              {
-                                                t.originalQuantity
-                                              }
-                                            </p>
-
-                                            <p className="text-2xl font-black text-blue-700">
-                                              {
-                                                relatedChange.old_quantity
-                                              }
-                                            </p>
-                                          </div>
-
-                                          <div className="rounded-lg bg-white p-3 text-center">
-                                            <p className="text-xs text-gray-600">
-                                              {
-                                                t.proposedQuantity
-                                              }
-                                            </p>
-
-                                            <p className="text-2xl font-black text-orange-600">
-                                              {
-                                                relatedChange.new_quantity
-                                              }
-                                            </p>
-                                          </div>
-                                        </div>
-
-                                        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-                                          <button
-                                            onClick={() =>
-                                              respondToQuantityChange(
-                                                relatedChange,
-                                                true
-                                              )
-                                            }
-                                            disabled={
-                                              respondingChange ===
-                                              relatedChange.id
-                                            }
-                                            className="flex-1 rounded-xl bg-green-600 px-5 py-3 font-bold text-white disabled:opacity-50"
-                                          >
-                                            {
-                                              respondingChange ===
-                                              relatedChange.id
-                                                ? t.saving
-                                                : t.approve
-                                            }
-                                          </button>
-
-                                          <button
-                                            onClick={() =>
-                                              respondToQuantityChange(
-                                                relatedChange,
-                                                false
-                                              )
-                                            }
-                                            disabled={
-                                              respondingChange ===
-                                              relatedChange.id
-                                            }
-                                            className="flex-1 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50"
-                                          >
-                                            {
-                                              respondingChange ===
-                                              relatedChange.id
-                                                ? t.saving
-                                                : t.reject
-                                            }
-                                          </button>
-                                        </div>
-                                      </div>
-                                    )
-                                  }
-
-                                  {
-                                    isQuantityNotification &&
-                                    relatedChange?.status ===
-                                      "approved" && (
-                                      <div className="mt-4 rounded-xl border-2 border-green-300 bg-green-50 p-3 text-center font-bold text-green-700">
-                                        {
-                                          t.approved
-                                        }
-                                      </div>
-                                    )
-                                  }
-
-                                  {
-                                    isQuantityNotification &&
-                                    relatedChange?.status ===
-                                      "rejected" && (
-                                      <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700">
-                                        {
-                                          t.rejected
-                                        }
-                                      </div>
-                                    )
-                                  }
-                                </div>
-                              </div>
+                              {isQuantityNotification &&
+                                relatedChange?.status ===
+                                  "rejected" && (
+                                  <div className="mt-4 rounded-xl border-2 border-red-300 bg-red-50 p-3 text-center font-bold text-red-700">
+                                    {t.rejected}
+                                  </div>
+                                )}
                             </div>
-                          );
-                        }
-                      )
+                          </div>
+                        </div>
+                      );
                     }
-                  </div>
-                )
-              }
+                  )}
+                </div>
+              )}
 
-              {
-                pendingQuantityChanges.length >
-                  0 && (
-                  <div className="mt-4 rounded-xl bg-orange-50 p-4 text-center font-bold text-orange-700">
-                    {
-                      isArabic
-                        ? `يوجد ${pendingQuantityChanges.length} تعديل كمية في انتظار موافقتك.`
-                        : `${pendingQuantityChanges.length} ${t.pendingChangesText}`
-                    }
-                  </div>
-                )
-              }
+              {pendingQuantityChanges.length >
+                0 && (
+                <div className="mt-4 rounded-xl bg-orange-50 p-4 text-center font-bold text-orange-700">
+                  {isArabic
+                    ? `يوجد ${pendingQuantityChanges.length} تعديل كمية في انتظار موافقتك.`
+                    : `${pendingQuantityChanges.length} ${t.pendingChangesText}`}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -3591,9 +3335,7 @@ export default function Home() {
 
       <section className="mx-auto w-full max-w-6xl px-4 py-10">
         <h2 className="mb-8 text-center text-2xl font-bold text-gray-800">
-          {
-            t.categories
-          }
+          {t.categories}
         </h2>
 
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -3606,9 +3348,7 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {
-                t.medicines
-              }
+              {t.medicines}
             </h3>
           </Link>
 
@@ -3621,9 +3361,7 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {
-                t.skinCare
-              }
+              {t.skinCare}
             </h3>
           </Link>
 
@@ -3636,9 +3374,7 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {
-                t.kids
-              }
+              {t.kids}
             </h3>
           </Link>
 
@@ -3651,9 +3387,7 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {
-                t.medicalDevices
-              }
+              {t.medicalDevices}
             </h3>
           </Link>
         </div>
@@ -3668,15 +3402,11 @@ export default function Home() {
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                {
-                  t.products
-                }
+                {t.products}
               </h2>
 
               <p className="mt-2 text-sm text-gray-600">
-                {
-                  t.availableProducts
-                }
+                {t.availableProducts}
               </p>
             </div>
 
@@ -3686,140 +3416,119 @@ export default function Home() {
               }
               className="rounded-xl border border-green-600 px-5 py-2 font-bold text-green-700"
             >
-              {
-                t.refreshProducts
-              }
+              {t.refreshProducts}
             </button>
           </div>
 
-          {
-            !filteredProducts.length ? (
-              <div className="rounded-2xl bg-gray-50 py-16 text-center">
-                <div className="text-6xl">
-                  📦
-                </div>
-
-                <h3 className="mt-5 text-2xl font-bold text-gray-800">
-                  {
-                    t.noProducts
-                  }
-                </h3>
+          {!filteredProducts.length ? (
+            <div className="rounded-2xl bg-gray-50 py-16 text-center">
+              <div className="text-6xl">
+                📦
               </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-                {
-                  filteredProducts.map(
-                    (
-                      product: Product
-                    ) => (
-                      <div
-                        key={
-                          product.id
-                        }
-                        className="rounded-2xl border bg-white p-3 shadow-sm sm:p-5"
-                      >
-                        <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl bg-green-50">
-                          {
-                            product.image_url ? (
-                              <img
-                                src={
-                                  product.image_url
-                                }
-                                alt={
-                                  product.name_ar
-                                }
-                                className="h-full w-full object-contain"
-                              />
-                            ) : (
-                              <span className="text-6xl">
-                                {
-                                  product.icon ||
-                                  "💊"
-                                }
-                              </span>
-                            )
+
+              <h3 className="mt-5 text-2xl font-bold text-gray-800">
+                {t.noProducts}
+              </h3>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+              {filteredProducts.map(
+                (
+                  product: Product
+                ) => (
+                  <div
+                    key={
+                      product.id
+                    }
+                    className="rounded-2xl border bg-white p-3 shadow-sm sm:p-5"
+                  >
+                    <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl bg-green-50">
+                      {product.image_url ? (
+                        <img
+                          src={
+                            product.image_url
                           }
-                        </div>
-
-                        <h3 className="mt-3 font-bold text-gray-800">
-                          {
-                            isArabic
-                              ? product.name_ar
-                              : product.name_en ||
-                                product.name_ar
+                          alt={
+                            product.name_ar
                           }
-                        </h3>
-
-                        {
-                          product.name_en && (
-                            <p
-                              dir="ltr"
-                              className="mt-1 text-xs text-gray-600"
-                            >
-                              {
-                                isArabic
-                                  ? product.name_en
-                                  : product.name_ar
-                              }
-                            </p>
-                          )
-                        }
-
-                        <p className="mt-2 text-sm text-gray-700">
+                          className="h-full w-full object-contain"
+                        />
+                      ) : (
+                        <span className="text-6xl">
                           {
-                            product.description ||
-                            t.noDescription
+                            product.icon ||
+                            "💊"
+                          }
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="mt-3 font-bold text-gray-800">
+                      {
+                        language ===
+                        "ar"
+                          ? product.name_ar
+                          : product.name_en ||
+                            product.name_ar
+                      }
+                    </h3>
+
+                    {product.name_en &&
+                      language ===
+                        "ar" && (
+                        <p className="mt-1 text-xs text-gray-600">
+                          {
+                            product.name_en
                           }
                         </p>
+                      )}
 
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="font-bold text-green-700">
-                            {
-                              product.price
-                            }{" "}
-                            {
-                              isArabic
-                                ? "جنيه"
-                                : "EGP"
-                            }
-                          </span>
+                    <p className="mt-2 text-sm text-gray-700">
+                      {
+                        product.description ||
+                        t.noDescription
+                      }
+                    </p>
 
-                          <span className="text-xs font-bold text-gray-700">
-                            {
-                              product.stock >
-                              0
-                                ? `${t.availableNow} ${product.stock}`
-                                : t.unavailable
-                            }
-                          </span>
-                        </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <span className="font-bold text-green-700">
+                        {
+                          product.price
+                        }{" "}
+                        {isArabic
+                          ? "جنيه"
+                          : "EGP"}
+                      </span>
 
-                        <button
-                          onClick={() =>
-                            addToCart(
-                              product
-                            )
-                          }
-                          disabled={
-                            product.stock <=
-                            0
-                          }
-                          className="mt-4 w-full rounded-xl bg-green-600 px-3 py-3 font-bold text-white disabled:bg-gray-300"
-                        >
-                          {
-                            product.stock >
-                            0
-                              ? t.addToCart
-                              : t.unavailable
-                          }
-                        </button>
-                      </div>
-                    )
-                  )
-                }
-              </div>
-            )
-          }
+                      <span className="text-xs font-bold text-gray-700">
+                        {product.stock > 0
+                          ? `${t.availableNow} ${product.stock}`
+                          : t.unavailable}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        addToCart(
+                          product
+                        )
+                      }
+                      disabled={
+                        product.stock <=
+                        0
+                      }
+                      className="mt-4 w-full rounded-xl bg-green-600 px-3 py-3 font-bold text-white disabled:bg-gray-300"
+                    >
+                      {product.stock >
+                      0
+                        ? t.addToCart
+                        : t.unavailable}
+                    </button>
+                  </div>
+                )
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -3829,21 +3538,15 @@ export default function Home() {
 
       <footer className="bg-gray-900 px-4 py-8 text-center text-white">
         <h2 className="text-xl font-bold">
-          {
-            t.pharmacyName
-          }
+          {t.pharmacyName}
         </h2>
 
         <p className="mt-2 text-gray-300">
-          {
-            t.footerPriority
-          }
+          {t.footerPriority}
         </p>
 
         <p className="mt-4 text-sm text-gray-400">
-          {
-            t.rights
-          }
+          {t.rights}
         </p>
       </footer>
 
@@ -3851,434 +3554,366 @@ export default function Home() {
           Cart
       ===================================================== */}
 
-      {
-        cartOpen && (
-          <div className="fixed inset-0 z-[200] bg-black/50">
-            <div className="absolute inset-y-0 right-0 flex h-full w-[92vw] max-w-md flex-col bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b p-4">
-                <h2 className="text-xl font-bold text-gray-800">
-                  {
-                    t.shoppingCart
-                  }
-                </h2>
+      {cartOpen && (
+        <div className="fixed inset-0 z-[200] bg-black/50">
+          <div className="absolute inset-y-0 right-0 flex h-full w-[92vw] max-w-md flex-col bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {t.shoppingCart}
+              </h2>
 
-                <button
-                  onClick={() =>
-                    setCartOpen(
-                      false
-                    )
-                  }
-                  className="text-2xl text-gray-600"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="flex-1 overflow-y-auto p-4">
-                {
-                  !cart.length ? (
-                    <div className="py-20 text-center">
-                      <div className="text-6xl">
-                        🛒
-                      </div>
-
-                      <h3 className="mt-5 font-bold text-gray-800">
-                        {
-                          t.emptyCart
-                        }
-                      </h3>
-                    </div>
-                  ) : (
-                    <>
-                      <div className="space-y-4">
-                        {
-                          cart.map(
-                            (
-                              item: CartItem
-                            ) => (
-                              <div
-                                key={
-                                  item.id
-                                }
-                                className="rounded-xl border p-4"
-                              >
-                                <div className="flex items-start gap-4">
-                                  <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-green-50">
-                                    {
-                                      item.image_url ? (
-                                        <img
-                                          src={
-                                            item.image_url
-                                          }
-                                          alt={
-                                            item.name_ar
-                                          }
-                                          className="h-full w-full object-contain"
-                                        />
-                                      ) : (
-                                        <span className="text-5xl">
-                                          {
-                                            item.icon ||
-                                            "💊"
-                                          }
-                                        </span>
-                                      )
-                                    }
-                                  </div>
-
-                                  <div className="min-w-0 flex-1">
-                                    <h3 className="break-words font-bold text-gray-800">
-                                      {
-                                        isArabic
-                                          ? item.name_ar
-                                          : item.name_en ||
-                                            item.name_ar
-                                      }
-                                    </h3>
-
-                                    {
-                                      item.name_en && (
-                                        <p
-                                          dir="ltr"
-                                          className="mt-1 truncate text-xs text-gray-600"
-                                        >
-                                          {
-                                            isArabic
-                                              ? item.name_en
-                                              : item.name_ar
-                                          }
-                                        </p>
-                                      )
-                                    }
-
-                                    <p className="mt-1 text-sm font-medium text-gray-700">
-                                      {
-                                        item.price
-                                      }{" "}
-                                      {
-                                        isArabic
-                                          ? "جنيه"
-                                          : "EGP"
-                                      }
-                                    </p>
-
-                                    <p className="mt-1 text-xs font-medium text-gray-700">
-                                      {
-                                        t.availableNow
-                                      }{" "}
-                                      {
-                                        item.stock
-                                      }
-                                    </p>
-                                  </div>
-                                </div>
-
-                                <div className="mt-4 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                                  <div>
-                                    <p className="font-bold text-gray-800">
-                                      {
-                                        t.quantity
-                                      }
-                                      :{" "}
-                                      {
-                                        item.quantity
-                                      }
-                                    </p>
-
-                                    <p className="mt-2 text-sm font-semibold text-gray-700">
-                                      {
-                                        t.total
-                                      }
-                                      :{" "}
-                                      {
-                                        item.price *
-                                        item.quantity
-                                      }{" "}
-                                      {
-                                        isArabic
-                                          ? "جنيه"
-                                          : "EGP"
-                                      }
-                                    </p>
-                                  </div>
-
-                                  <div
-                                    dir="ltr"
-                                    className="flex items-center justify-center gap-3"
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        decreaseQuantity(
-                                          item.id
-                                        )
-                                      }
-                                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-300 text-2xl font-black text-black shadow-sm hover:bg-gray-400"
-                                    >
-                                      −
-                                    </button>
-
-                                    <span className="flex h-11 min-w-[50px] items-center justify-center rounded-xl border-2 border-gray-300 bg-white px-3 text-xl font-black text-black">
-                                      {
-                                        item.quantity
-                                      }
-                                    </span>
-
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        increaseQuantity(
-                                          item.id
-                                        )
-                                      }
-                                      disabled={
-                                        item.quantity >=
-                                        item.stock
-                                      }
-                                      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-600 text-2xl font-black text-white shadow-sm hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                </div>
-
-                                <p className="mt-3 text-sm font-semibold text-gray-700">
-                                  {
-                                    t.total
-                                  }
-                                  :{" "}
-                                  {
-                                    item.price *
-                                    item.quantity
-                                  }{" "}
-                                  {
-                                    isArabic
-                                      ? "جنيه"
-                                      : "EGP"
-                                  }
-                                </p>
-                              </div>
-                            )
-                          )
-                        }
-                      </div>
-
-                      <div className="mt-6 rounded-xl bg-green-50 p-4">
-                        <div className="flex items-center justify-between font-bold">
-                          <span>
-                            {
-                              t.cartTotal
-                            }
-                          </span>
-
-                          <span className="text-green-700">
-                            {
-                              cartTotal
-                            }{" "}
-                            {
-                              isArabic
-                                ? "جنيه"
-                                : "EGP"
-                            }
-                          </span>
-                        </div>
-
-                        <button
-                          onClick={
-                            openCheckout
-                          }
-                          className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white"
-                        >
-                          {
-                            t.checkout
-                          }
-                        </button>
-                      </div>
-                    </>
-                  )
+              <button
+                onClick={() =>
+                  setCartOpen(false)
                 }
-              </div>
+                className="text-2xl text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4">
+              {!cart.length ? (
+                <div className="py-20 text-center">
+                  <div className="text-6xl">
+                    🛒
+                  </div>
+
+                  <h3 className="mt-5 font-bold text-gray-800">
+                    {t.emptyCart}
+                  </h3>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {cart.map(
+                      (
+                        item: CartItem
+                      ) => (
+                        <div
+                          key={
+                            item.id
+                          }
+                          className="rounded-xl border p-4"
+                        >
+                          <div className="flex items-start gap-4">
+                            <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border bg-green-50">
+                              {item.image_url ? (
+                                <img
+                                  src={
+                                    item.image_url
+                                  }
+                                  alt={
+                                    item.name_ar
+                                  }
+                                  className="h-full w-full object-contain"
+                                />
+                              ) : (
+                                <span className="text-5xl">
+                                  {
+                                    item.icon ||
+                                    "💊"
+                                  }
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <h3 className="break-words font-bold text-gray-800">
+                                {language ===
+                                "ar"
+                                  ? item.name_ar
+                                  : item.name_en ||
+                                    item.name_ar}
+                              </h3>
+
+                              {item.name_en &&
+                                language ===
+                                  "ar" && (
+                                  <p
+                                    dir="ltr"
+                                    className="mt-1 truncate text-xs text-gray-600"
+                                  >
+                                    {
+                                      item.name_en
+                                    }
+                                  </p>
+                                )}
+
+                              <p className="mt-1 text-sm font-medium text-gray-700">
+                                {
+                                  item.price
+                                }{" "}
+                                {isArabic
+                                  ? "جنيه"
+                                  : "EGP"}
+                              </p>
+
+                              <p className="mt-1 text-xs font-medium text-gray-700">
+                                {
+                                  t.availableNow
+                                }{" "}
+                                {
+                                  item.stock
+                                }
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 flex flex-col gap-4 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="font-bold text-gray-800">
+                                {
+                                  t.quantity
+                                }
+                                :{" "}
+                                {
+                                  item.quantity
+                                }
+                              </p>
+
+                              <p className="mt-2 text-sm font-semibold text-gray-700">
+                                {
+                                  t.total
+                                }
+                                :{" "}
+                                {
+                                  item.price *
+                                  item.quantity
+                                }{" "}
+                                {isArabic
+                                  ? "جنيه"
+                                  : "EGP"}
+                              </p>
+                            </div>
+
+                            <div
+                              dir="ltr"
+                              className="flex items-center justify-center gap-3"
+                            >
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  decreaseQuantity(
+                                    item.id
+                                  )
+                                }
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gray-300 text-2xl font-black text-black shadow-sm hover:bg-gray-400"
+                              >
+                                −
+                              </button>
+
+                              <span className="flex h-11 min-w-[50px] items-center justify-center rounded-xl border-2 border-gray-300 bg-white px-3 text-xl font-black text-black">
+                                {
+                                  item.quantity
+                                }
+                              </span>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  increaseQuantity(
+                                    item.id
+                                  )
+                                }
+                                disabled={
+                                  item.quantity >=
+                                  item.stock
+                                }
+                                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-green-600 text-2xl font-black text-white shadow-sm hover:bg-green-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+
+                          <p className="mt-3 text-sm font-semibold text-gray-700">
+                            {t.total}:{" "}
+                            {
+                              item.price *
+                              item.quantity
+                            }{" "}
+                            {isArabic
+                              ? "جنيه"
+                              : "EGP"}
+                          </p>
+                        </div>
+                      )
+                    )}
+                  </div>
+
+                  <div className="mt-6 rounded-xl bg-green-50 p-4">
+                    <div className="flex items-center justify-between font-bold">
+                      <span>
+                        {t.cartTotal}
+                      </span>
+
+                      <span className="text-green-700">
+                        {
+                          cartTotal
+                        }{" "}
+                        {isArabic
+                          ? "جنيه"
+                          : "EGP"}
+                      </span>
+                    </div>
+
+                    <button
+                      onClick={
+                        openCheckout
+                      }
+                      className="mt-5 w-full rounded-xl bg-green-600 py-3 font-bold text-white"
+                    >
+                      {t.checkout}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
 
       {/* =====================================================
           Checkout
       ===================================================== */}
 
-      {
-        checkoutOpen && (
-          <div className="fixed inset-0 z-[210] overflow-y-auto bg-black/60 p-3">
-            <div className="mx-auto mt-6 w-full max-w-lg rounded-2xl bg-white shadow-2xl">
-              <div className="flex items-center justify-between border-b p-4">
-                <h2 className="text-xl font-bold text-gray-800">
-                  {
-                    t.orderData
-                  }
-                </h2>
+      {checkoutOpen && (
+        <div className="fixed inset-0 z-[210] overflow-y-auto bg-black/60 p-3">
+          <div className="mx-auto mt-6 w-full max-w-lg rounded-2xl bg-white shadow-2xl">
+            <div className="flex items-center justify-between border-b p-4">
+              <h2 className="text-xl font-bold text-gray-800">
+                {t.orderData}
+              </h2>
 
-                <button
-                  onClick={() =>
-                    setCheckoutOpen(
-                      false
+              <button
+                onClick={() =>
+                  setCheckoutOpen(false)
+                }
+                className="text-2xl text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 p-5">
+              <div>
+                <label className="mb-2 block font-bold text-gray-800">
+                  {t.fullName}
+                </label>
+
+                <input
+                  type="text"
+                  value={
+                    customerName
+                  }
+                  onChange={(e) =>
+                    setCustomerName(
+                      e.target.value
                     )
                   }
-                  className="text-2xl text-gray-600"
-                >
-                  ✕
-                </button>
+                  className="w-full rounded-xl border px-4 py-3 text-gray-900"
+                  placeholder={
+                    t.enterName
+                  }
+                />
               </div>
 
-              <div className="space-y-4 p-5">
-                <div>
-                  <label className="mb-2 block font-bold text-gray-800">
-                    {
-                      t.fullName
-                    }
-                  </label>
+              <div>
+                <label className="mb-2 block font-bold text-gray-800">
+                  {t.phone}
+                </label>
 
-                  <input
-                    type="text"
-                    value={
-                      customerName
-                    }
-                    onChange={(
-                      e
-                    ) =>
-                      setCustomerName(
-                        e.target.value
-                      )
-                    }
-                    className="w-full rounded-xl border px-4 py-3 text-gray-900"
-                    placeholder={
-                      t.enterName
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block font-bold text-gray-800">
-                    {
-                      t.phone
-                    }
-                  </label>
-
-                  <input
-                    type="tel"
-                    value={
-                      phone
-                    }
-                    onChange={(
-                      e
-                    ) =>
-                      setPhone(
-                        e.target.value
-                      )
-                    }
-                    dir="ltr"
-                    className="w-full rounded-xl border px-4 py-3 text-left text-gray-900"
-                    placeholder="01xxxxxxxxx"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block font-bold text-gray-800">
-                    {
-                      t.address
-                    }
-                  </label>
-
-                  <textarea
-                    value={
-                      address
-                    }
-                    onChange={(
-                      e
-                    ) =>
-                      setAddress(
-                        e.target.value
-                      )
-                    }
-                    rows={
-                      3
-                    }
-                    className="w-full rounded-xl border px-4 py-3 text-gray-900"
-                    placeholder={
-                      t.enterAddress
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-2 block font-bold text-gray-800">
-                    {
-                      t.notes
-                    }
-                  </label>
-
-                  <textarea
-                    value={
-                      notes
-                    }
-                    onChange={(
-                      e
-                    ) =>
-                      setNotes(
-                        e.target.value
-                      )
-                    }
-                    rows={
-                      2
-                    }
-                    className="w-full rounded-xl border px-4 py-3 text-gray-900"
-                    placeholder={
-                      t.extraNotes
-                    }
-                  />
-                </div>
-
-                <div className="rounded-xl bg-green-50 p-4">
-                  <div className="flex items-center justify-between font-bold">
-                    <span>
-                      {
-                        t.orderTotal
-                      }
-                    </span>
-
-                    <span className="text-green-700">
-                      {
-                        cartTotal
-                      }{" "}
-                      {
-                        isArabic
-                          ? "جنيه"
-                          : "EGP"
-                      }
-                    </span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={
-                    confirmOrder
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) =>
+                    setPhone(
+                      e.target.value
+                    )
                   }
-                  disabled={
-                    ordering
-                  }
-                  className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white disabled:opacity-60"
-                >
-                  {
-                    ordering
-                      ? t.sendingOrder
-                      : t.confirmOrder
-                  }
-                </button>
+                  dir="ltr"
+                  className="w-full rounded-xl border px-4 py-3 text-left text-gray-900"
+                  placeholder="01xxxxxxxxx"
+                />
               </div>
+
+              <div>
+                <label className="mb-2 block font-bold text-gray-800">
+                  {t.address}
+                </label>
+
+                <textarea
+                  value={
+                    address
+                  }
+                  onChange={(e) =>
+                    setAddress(
+                      e.target.value
+                    )
+                  }
+                  rows={3}
+                  className="w-full rounded-xl border px-4 py-3 text-gray-900"
+                  placeholder={
+                    t.enterAddress
+                  }
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block font-bold text-gray-800">
+                  {t.notes}
+                </label>
+
+                <textarea
+                  value={
+                    notes
+                  }
+                  onChange={(e) =>
+                    setNotes(
+                      e.target.value
+                    )
+                  }
+                  rows={2}
+                  className="w-full rounded-xl border px-4 py-3 text-gray-900"
+                  placeholder={
+                    t.extraNotes
+                  }
+                />
+              </div>
+
+              <div className="rounded-xl bg-green-50 p-4">
+                <div className="flex items-center justify-between font-bold">
+                  <span>
+                    {t.orderTotal}
+                  </span>
+
+                  <span className="text-green-700">
+                    {
+                      cartTotal
+                    }{" "}
+                    {isArabic
+                      ? "جنيه"
+                      : "EGP"}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={
+                  confirmOrder
+                }
+                disabled={ordering}
+                className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white disabled:opacity-60"
+              >
+                {ordering
+                  ? t.sendingOrder
+                  : t.confirmOrder}
+              </button>
             </div>
           </div>
-        )
-      }
+        </div>
+      )}
     </main>
   );
 }
