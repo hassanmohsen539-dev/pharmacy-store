@@ -15,38 +15,25 @@ export async function updateSession(
   const supabase =
     createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env
-        .NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
       {
         cookies: {
           getAll() {
             return request.cookies.getAll();
           },
 
-          setAll(
-            cookiesToSet,
-            headers
-          ) {
-            cookiesToSet.forEach(
-              ({ name, value }) => {
-                request.cookies.set(
-                  name,
-                  value
-                );
-              }
-            );
-
-            supabaseResponse =
-              NextResponse.next({
-                request,
-              });
-
+          setAll(cookiesToSet) {
             cookiesToSet.forEach(
               ({
                 name,
                 value,
                 options,
               }) => {
+                request.cookies.set(
+                  name,
+                  value
+                );
+
                 supabaseResponse.cookies.set(
                   name,
                   value,
@@ -54,38 +41,10 @@ export async function updateSession(
                 );
               }
             );
-
-            Object.entries(
-              headers || {}
-            ).forEach(
-              ([key, value]) => {
-                supabaseResponse.headers.set(
-                  key,
-                  value
-                );
-              }
-            );
           },
         },
       }
     );
-
-  // =====================================================
-  // لا نشغّل Auth refresh على API requests
-  // لأن الـAPI في مشروعنا تستقبل Bearer Token
-  // =====================================================
-
-  if (
-    request.nextUrl.pathname.startsWith(
-      "/api/"
-    )
-  ) {
-    return supabaseResponse;
-  }
-
-  // =====================================================
-  // تحديث جلسة Supabase للصفحات فقط
-  // =====================================================
 
   await supabase.auth.getClaims();
 
