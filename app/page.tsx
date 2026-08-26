@@ -67,7 +67,10 @@ export default function Home() {
   const [notifications, setNotifications] = useState<Notification[]>(
     []
   );
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
+
+  const [notificationsOpen, setNotificationsOpen] =
+    useState(false);
+
   const [notificationsLoading, setNotificationsLoading] =
     useState(false);
 
@@ -108,7 +111,10 @@ export default function Home() {
 
       setProducts((result || []) as Product[]);
     } catch (error) {
-      console.error("LOAD PRODUCTS ERROR:", error);
+      console.error(
+        "LOAD PRODUCTS ERROR:",
+        error
+      );
 
       setProducts([]);
 
@@ -127,36 +133,27 @@ export default function Home() {
   // =====================================================
 
   async function loadNotifications(
-    currentUserId?: string
+    currentUserId: string
   ) {
     setNotificationsLoading(true);
 
     try {
-      let id = currentUserId;
-
-      if (!id) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        id = user?.id;
-      }
-
-      if (!id) {
-        setNotifications([]);
-        return;
-      }
-
       const {
         data,
         error,
       } = await supabase
         .from("notifications")
         .select("*")
-        .eq("user_id", id)
-        .order("created_at", {
-          ascending: false,
-        });
+        .eq(
+          "user_id",
+          currentUserId
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        );
 
       if (error) {
         console.error(
@@ -169,6 +166,11 @@ export default function Home() {
       setNotifications(
         (data || []) as Notification[]
       );
+    } catch (error) {
+      console.error(
+        "NOTIFICATIONS ERROR:",
+        error
+      );
     } finally {
       setNotificationsLoading(false);
     }
@@ -179,31 +181,19 @@ export default function Home() {
   // =====================================================
 
   async function loadQuantityChanges(
-    currentUserId?: string
+    currentUserId: string
   ) {
     try {
-      let id = currentUserId;
-
-      if (!id) {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        id = user?.id;
-      }
-
-      if (!id) {
-        setQuantityChanges([]);
-        return;
-      }
-
       const {
         data: orders,
         error: ordersError,
       } = await supabase
         .from("orders")
         .select("id")
-        .eq("user_id", id);
+        .eq(
+          "user_id",
+          currentUserId
+        );
 
       if (
         ordersError ||
@@ -221,12 +211,20 @@ export default function Home() {
         data,
         error,
       } = await supabase
-        .from("order_quantity_changes")
+        .from(
+          "order_quantity_changes"
+        )
         .select("*")
-        .in("order_id", orderIds)
-        .order("created_at", {
-          ascending: false,
-        });
+        .in(
+          "order_id",
+          orderIds
+        )
+        .order(
+          "created_at",
+          {
+            ascending: false,
+          }
+        );
 
       if (error) {
         console.error(
@@ -248,7 +246,11 @@ export default function Home() {
   }
 
   // =====================================================
-  // تحميل المستخدم ومراقبة Auth
+  // تحميل المستخدم مرة واحدة
+  //
+  // مهم:
+  // لا يوجد onAuthStateChange هنا.
+  // الصفحة الرئيسية لا تتدخل في refresh الخاص بـAuth.
   // =====================================================
 
   useEffect(() => {
@@ -258,9 +260,25 @@ export default function Home() {
       try {
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession();
 
         if (!mounted) {
+          return;
+        }
+
+        if (sessionError) {
+          console.error(
+            "LOAD SESSION ERROR:",
+            sessionError
+          );
+
+          setUserId(null);
+          setUserEmail(null);
+          setUserName(null);
+          setNotifications([]);
+          setQuantityChanges([]);
+
           return;
         }
 
@@ -269,35 +287,47 @@ export default function Home() {
           session
         );
 
-        if (session?.user) {
-          const user = session.user;
+        if (!session?.user) {
+          setUserId(null);
+          setUserEmail(null);
+          setUserName(null);
+          setNotifications([]);
+          setQuantityChanges([]);
 
-          setUserId(user.id);
-          setUserEmail(user.email ?? null);
+          return;
+        }
 
-          const name =
-            user.user_metadata?.name ||
-            user.user_metadata?.full_name ||
-            null;
+        const user = session.user;
 
-          setUserName(name);
+        setUserId(user.id);
+        setUserEmail(
+          user.email ?? null
+        );
 
-          await Promise.all([
-            loadNotifications(user.id),
-            loadQuantityChanges(user.id),
-          ]);
-        } else {
+        const name =
+          user.user_metadata?.name ||
+          user.user_metadata?.full_name ||
+          null;
+
+        setUserName(name);
+
+        await Promise.all([
+          loadNotifications(user.id),
+          loadQuantityChanges(user.id),
+        ]);
+      } catch (error) {
+        console.error(
+          "LOAD USER ERROR:",
+          error
+        );
+
+        if (mounted) {
           setUserId(null);
           setUserEmail(null);
           setUserName(null);
           setNotifications([]);
           setQuantityChanges([]);
         }
-      } catch (error) {
-        console.error(
-          "LOAD USER ERROR:",
-          error
-        );
       } finally {
         if (mounted) {
           setLoadingUser(false);
@@ -308,173 +338,8 @@ export default function Home() {
     loadUser();
     loadProducts();
 
-    // =====================================================
-    // Auth Listener
-    // =====================================================
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) {
-          return;
-        }
-
-        console.log(
-          "================ AUTH EVENT ================"
-        );
-
-        console.log(
-          "EVENT:",
-          event
-        );
-
-        console.log(
-          "USER:",
-          session?.user?.id || null
-        );
-
-        console.log(
-          "EMAIL:",
-          session?.user?.email || null
-        );
-
-        console.log(
-          "SESSION EXISTS:",
-          !!session
-        );
-
-        console.log(
-          "============================================"
-        );
-
-        // =================================================
-        // توجد جلسة
-        // =================================================
-
-        if (session?.user) {
-          const user = session.user;
-
-          setUserId(user.id);
-          setUserEmail(
-            user.email ?? null
-          );
-
-          const name =
-            user.user_metadata?.name ||
-            user.user_metadata?.full_name ||
-            null;
-
-          setUserName(name);
-          setLoadingUser(false);
-
-          setTimeout(() => {
-            if (!mounted) {
-              return;
-            }
-
-            Promise.all([
-              loadNotifications(user.id),
-              loadQuantityChanges(user.id),
-            ]).catch((error) => {
-              console.error(
-                "AUTH CHANGE DATA ERROR:",
-                error
-              );
-            });
-          }, 0);
-
-          return;
-        }
-
-        // =================================================
-        // مهم جدًا:
-        // لا نفترض أن المستخدم خرج لمجرد أن event
-        // وصل بدون session.
-        //
-        // نتحقق من Session الحالية أولًا.
-        // =================================================
-
-        setTimeout(async () => {
-          if (!mounted) {
-            return;
-          }
-
-          try {
-            const {
-              data: {
-                session: currentSession,
-              },
-            } =
-              await supabase.auth.getSession();
-
-            console.log(
-              "AUTH EMPTY EVENT - CURRENT SESSION:",
-              currentSession
-            );
-
-            // =================================================
-            // Session ما زالت موجودة
-            // =================================================
-
-            if (currentSession?.user) {
-              const user =
-                currentSession.user;
-
-              setUserId(user.id);
-              setUserEmail(
-                user.email ?? null
-              );
-
-              const name =
-                user.user_metadata?.name ||
-                user.user_metadata?.full_name ||
-                null;
-
-              setUserName(name);
-              setLoadingUser(false);
-
-              Promise.all([
-                loadNotifications(user.id),
-                loadQuantityChanges(user.id),
-              ]).catch((error) => {
-                console.error(
-                  "CURRENT SESSION DATA ERROR:",
-                  error
-                );
-              });
-
-              return;
-            }
-
-            // =================================================
-            // لا توجد Session فعلية
-            // هنا فقط نعتبر المستخدم خرج
-            // =================================================
-
-            console.error(
-              "NO CURRENT SESSION - USER IS REALLY LOGGED OUT"
-            );
-
-            setUserId(null);
-            setUserEmail(null);
-            setUserName(null);
-            setNotifications([]);
-            setQuantityChanges([]);
-            setLoadingUser(false);
-          } catch (error) {
-            console.error(
-              "AUTH SESSION CHECK ERROR:",
-              error
-            );
-          }
-        }, 0);
-      }
-    );
-
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
   }, []);
 
@@ -488,14 +353,17 @@ export default function Home() {
     }
 
     const channel = supabase
-      .channel(`customer-live-${userId}`)
+      .channel(
+        `customer-live-${userId}`
+      )
       .on(
         "postgres_changes",
         {
           event: "INSERT",
           schema: "public",
           table: "notifications",
-          filter: `user_id=eq.${userId}`,
+          filter:
+            `user_id=eq.${userId}`,
         },
         async (payload) => {
           const notification =
@@ -523,7 +391,8 @@ export default function Home() {
         {
           event: "*",
           schema: "public",
-          table: "order_quantity_changes",
+          table:
+            "order_quantity_changes",
         },
         async () => {
           await loadQuantityChanges(
@@ -545,13 +414,21 @@ export default function Home() {
   // =====================================================
 
   async function handleLogout() {
-    const { error } =
+    const {
+      error,
+    } =
       await supabase.auth.signOut();
 
     if (error) {
+      console.error(
+        "SIGN OUT ERROR:",
+        error
+      );
+
       alert(
         "حدث خطأ أثناء تسجيل الخروج"
       );
+
       return;
     }
 
@@ -575,21 +452,23 @@ export default function Home() {
   ) {
     const {
       error,
-    } = await supabase
-      .from("notifications")
-      .update({
-        is_read: true,
-      })
-      .eq(
-        "id",
-        notificationId
-      );
+    } =
+      await supabase
+        .from("notifications")
+        .update({
+          is_read: true,
+        })
+        .eq(
+          "id",
+          notificationId
+        );
 
     if (error) {
       console.error(
         "MARK NOTIFICATION ERROR:",
         error
       );
+
       return;
     }
 
@@ -634,24 +513,26 @@ export default function Home() {
 
     const {
       error,
-    } = await supabase
-      .from("notifications")
-      .update({
-        is_read: true,
-      })
-      .in(
-        "id",
-        unreadIds
-      )
-      .eq(
-        "user_id",
-        userId
-      );
+    } =
+      await supabase
+        .from("notifications")
+        .update({
+          is_read: true,
+        })
+        .in(
+          "id",
+          unreadIds
+        )
+        .eq(
+          "user_id",
+          userId
+        );
 
     if (error) {
       alert(
         "حدث خطأ أثناء تحديث الإشعارات."
       );
+
       return;
     }
 
@@ -693,6 +574,7 @@ export default function Home() {
           "LOAD ADMINS ERROR:",
           adminsError
         );
+
         return;
       }
 
@@ -703,32 +585,37 @@ export default function Home() {
         console.error(
           "NO ADMINS FOUND"
         );
+
         return;
       }
 
       const rows =
         admins.map(
           (admin) => ({
-            user_id: admin.id,
-            order_id: orderId,
+            user_id:
+              admin.id,
+            order_id:
+              orderId,
             order_item_id:
               orderItemId,
             type:
               "quantity_response",
             title,
             message,
-            is_read: false,
+            is_read:
+              false,
           })
         );
 
       const {
         error:
           notificationError,
-      } = await supabase
-        .from(
-          "notifications"
-        )
-        .insert(rows);
+      } =
+        await supabase
+          .from(
+            "notifications"
+          )
+          .insert(rows);
 
       if (
         notificationError
@@ -781,6 +668,7 @@ export default function Home() {
         alert(
           "يجب تسجيل الدخول أولاً."
         );
+
         return;
       }
 
@@ -810,6 +698,7 @@ export default function Home() {
         alert(
           "لا يمكن تنفيذ هذا التعديل."
         );
+
         return;
       }
 
@@ -1085,6 +974,7 @@ export default function Home() {
       alert(
         "هذا المنتج غير متوفر حاليًا."
       );
+
       return;
     }
 
@@ -1254,19 +1144,25 @@ export default function Home() {
         return (
           product.name_ar
             .toLowerCase()
-            .includes(searchText) ||
+            .includes(
+              searchText
+            ) ||
           (
             product.name_en ||
             ""
           )
             .toLowerCase()
-            .includes(searchText) ||
+            .includes(
+              searchText
+            ) ||
           (
             product.description ||
             ""
           )
             .toLowerCase()
-            .includes(searchText)
+            .includes(
+              searchText
+            )
         );
       }
     );
@@ -1330,7 +1226,8 @@ export default function Home() {
     try {
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } =
+        await supabase.auth.getUser();
 
       if (!user) {
         alert(
@@ -2473,7 +2370,8 @@ export default function Home() {
                     e
                   ) =>
                     setCustomerName(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                   placeholder="اكتب اسمك"
@@ -2495,7 +2393,8 @@ export default function Home() {
                     e
                   ) =>
                     setPhone(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                   placeholder="01xxxxxxxxx"
@@ -2516,7 +2415,8 @@ export default function Home() {
                     e
                   ) =>
                     setAddress(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                   placeholder="اكتب عنوان التوصيل بالتفصيل"
@@ -2540,7 +2440,8 @@ export default function Home() {
                     e
                   ) =>
                     setNotes(
-                      e.target.value
+                      e.target
+                        .value
                     )
                   }
                   placeholder="أي ملاحظات إضافية..."
