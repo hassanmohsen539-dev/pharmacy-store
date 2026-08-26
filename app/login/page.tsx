@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(
-    e: React.FormEvent
+    e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
 
@@ -23,7 +23,9 @@ export default function LoginPage() {
       return;
     }
 
-    if (loading) return;
+    if (loading) {
+      return;
+    }
 
     setLoading(true);
 
@@ -51,50 +53,39 @@ export default function LoginPage() {
         return;
       }
 
-      if (!loginData.user) {
-        alert(
-          "لم يتم تسجيل الدخول."
-        );
-        return;
-      }
-
       // =====================================================
-      // التأكد أن الـ Session موجودة فعلًا
+      // نتأكد أن Supabase أعادت User + Session
       // =====================================================
 
-      const {
-        data: {
-          session,
-        },
-        error: sessionError,
-      } =
-        await supabase.auth.getSession();
+      const user = loginData.user;
+      const session = loginData.session;
 
-      if (
-        sessionError ||
-        !session ||
-        session.user.id !==
-          loginData.user.id
-      ) {
+      if (!user || !session) {
         console.error(
-          "SESSION ERROR:",
-          sessionError
+          "LOGIN RESULT WITHOUT SESSION:",
+          loginData
         );
 
         alert(
-          "تم تسجيل الدخول ولكن لم يتم حفظ جلسة الحساب على الجهاز. حاول مرة أخرى."
+          "تم تسجيل الدخول ولكن لم يتم إنشاء جلسة للحساب."
         );
 
         return;
       }
 
       console.log(
-        "LOGIN SESSION SAVED:",
-        session.user.id
+        "LOGIN SUCCESS:",
+        user.id
+      );
+
+      console.log(
+        "LOGIN SESSION EXISTS:",
+        !!session
       );
 
       // =====================================================
-      // التأكد من صلاحية الحساب
+      // فحص صلاحية الحساب
+      // لا نستخدم getSession هنا
       // =====================================================
 
       let role: string | null = null;
@@ -107,10 +98,7 @@ export default function LoginPage() {
           await supabase
             .from("profiles")
             .select("role")
-            .eq(
-              "id",
-              loginData.user.id
-            )
+            .eq("id", user.id)
             .maybeSingle();
 
         if (profileError) {
@@ -118,10 +106,6 @@ export default function LoginPage() {
             "PROFILE ERROR:",
             profileError
           );
-
-          // لا نخرج المستخدم من الحساب
-          // لو حصل خطأ في معرفة الدور.
-          role = null;
         } else {
           role =
             profile?.role || null;
@@ -134,26 +118,7 @@ export default function LoginPage() {
       }
 
       // =====================================================
-      // نتأكد مرة ثانية أن الجلسة ما زالت موجودة
-      // =====================================================
-
-      const {
-        data: {
-          session: verifiedSession,
-        },
-      } =
-        await supabase.auth.getSession();
-
-      if (!verifiedSession) {
-        alert(
-          "جلسة تسجيل الدخول لم تُحفظ بشكل صحيح. حاول تسجيل الدخول مرة أخرى."
-        );
-
-        return;
-      }
-
-      // =====================================================
-      // توجيه المستخدم
+      // التوجيه
       // =====================================================
 
       if (role === "admin") {
