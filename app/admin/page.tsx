@@ -546,13 +546,12 @@ export default function AdminPage() {
       data || []
     ).forEach(
       (
-        product
+        product: Product
       ) => {
-        const p =
-          product as Product;
-
-        productMap[p.id] =
-          p;
+        productMap[
+          product.id
+        ] =
+          product;
       }
     );
 
@@ -1226,10 +1225,10 @@ export default function AdminPage() {
       []
     ).forEach(
       (
-        item
+        item: OrderItem
       ) => {
         const currentItem =
-          item as OrderItem;
+          item;
 
         if (
           !grouped[
@@ -1536,7 +1535,10 @@ export default function AdminPage() {
 
       setDraftStatuses(
         (
-          current
+          current: Record<
+            number,
+            string
+          >
         ) => ({
           ...current,
           [order.id]:
@@ -2123,13 +2125,12 @@ export default function AdminPage() {
       []
     ).forEach(
       (
-        product
+        product: Product
       ) => {
-        const p =
-          product as Product;
-
-        productMap[p.id] =
-          p;
+        productMap[
+          product.id
+        ] =
+          product;
       }
     );
 
@@ -2319,13 +2320,12 @@ export default function AdminPage() {
         []
       ).forEach(
         (
-          product
+          product: Product
         ) => {
-          const p =
-            product as Product;
-
-          productMap[p.id] =
-            p;
+          productMap[
+            product.id
+          ] =
+            product;
         }
       );
 
@@ -2639,7 +2639,6 @@ export default function AdminPage() {
         }
       }
 
-      // نفس الكمية بعد الرفض مسموح بها
       for (
         const item of changedItems
       ) {
@@ -2814,7 +2813,10 @@ export default function AdminPage() {
 
       setDraftStatuses(
         (
-          current
+          current: Record<
+            number,
+            string
+          >
         ) => ({
           ...current,
           [order.id]:
@@ -2832,7 +2834,10 @@ export default function AdminPage() {
       ) {
         setQuantityValues(
           (
-            current
+            current: Record<
+              number,
+              number
+            >
           ) => {
             const next = {
               ...current,
@@ -2865,7 +2870,10 @@ export default function AdminPage() {
 
         setQuantityTouched(
           (
-            current
+            current: Record<
+              number,
+              boolean
+            >
           ) => {
             const next = {
               ...current,
@@ -2938,7 +2946,7 @@ export default function AdminPage() {
       }
     }
 
-    start();
+    void start();
 
     const polling =
       window.setInterval(
@@ -2947,7 +2955,6 @@ export default function AdminPage() {
             return;
           }
 
-          // لا يحدث أثناء وجود تعديل غير محفوظ
           if (
             savingOrderId !==
               null ||
@@ -3241,10 +3248,6 @@ export default function AdminPage() {
       dir="rtl"
       className="min-h-screen bg-gray-50"
     >
-      {/* =====================================================
-          تنبيه طلب جديد
-      ===================================================== */}
-
       {newOrderAlert && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 p-4">
           <div className="w-full max-w-md rounded-3xl border-4 border-green-500 bg-white p-6 shadow-2xl">
@@ -3414,10 +3417,6 @@ export default function AdminPage() {
         id="orders"
         className="mx-auto max-w-6xl px-6 py-10"
       >
-        {/* =====================================================
-            تعديلات معلقة
-        ===================================================== */}
-
         {pendingChanges.length >
           0 && (
           <div className="mb-8 rounded-2xl border-2 border-orange-300 bg-orange-50 p-5">
@@ -3434,10 +3433,6 @@ export default function AdminPage() {
             </p>
           </div>
         )}
-
-        {/* =====================================================
-            إدارة الطلبات
-        ===================================================== */}
 
         <div className="mb-8 rounded-2xl border-2 border-red-200 bg-red-50 p-5">
           <h2 className="text-xl font-bold text-red-700">
@@ -3527,10 +3522,6 @@ export default function AdminPage() {
           </div>
         </div>
 
-        {/* =====================================================
-            المخزون
-        ===================================================== */}
-
         <div className="mb-8 rounded-2xl border-2 border-purple-200 bg-purple-50 p-5">
           <h2 className="text-xl font-bold text-purple-700">
             📦 حالة المخزون
@@ -3540,10 +3531,6 @@ export default function AdminPage() {
             يتم خصم المخزون عند انتقال الطلب إلى حالة تشغيلية، ويُعاد عند الرجوع إلى "جديد" أو "ملغي".
           </p>
         </div>
-
-        {/* =====================================================
-            الطلبات
-        ===================================================== */}
 
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">
@@ -3759,7 +3746,10 @@ export default function AdminPage() {
 
                               setDraftStatuses(
                                 (
-                                  current
+                                  current: Record<
+                                    number,
+                                    string
+                                  >
                                 ) => ({
                                   ...current,
                                   [order.id]:
@@ -3962,7 +3952,10 @@ export default function AdminPage() {
 
                                             setQuantityValues(
                                               (
-                                                current
+                                                current: Record<
+                                                  number,
+                                                  number
+                                                >
                                               ) => ({
                                                 ...current,
                                                 [item.id]:
@@ -3972,7 +3965,10 @@ export default function AdminPage() {
 
                                             setQuantityTouched(
                                               (
-                                                current
+                                                current: Record<
+                                                  number,
+                                                  boolean
+                                                >
                                               ) => ({
                                                 ...current,
                                                 [item.id]:
@@ -4021,7 +4017,10 @@ export default function AdminPage() {
 
                                             setQuantityValues(
                                               (
-                                                current
+                                                current: Record<
+                                                  number,
+                                                  number
+                                                >
                                               ) => ({
                                                 ...current,
                                                 [item.id]:
@@ -4031,7 +4030,10 @@ export default function AdminPage() {
 
                                             setQuantityTouched(
                                               (
-                                                current
+                                                current: Record<
+                                                  number,
+                                                  boolean
+                                                >
                                               ) => ({
                                                 ...current,
                                                 [item.id]:

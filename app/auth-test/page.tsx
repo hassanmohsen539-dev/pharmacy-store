@@ -1,6 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+import type {
+  AuthChangeEvent,
+  Session,
+} from "@supabase/supabase-js";
 import { supabase } from "../../lib/supabase";
 
 type AuthInfo = {
@@ -12,16 +19,20 @@ type AuthInfo = {
 };
 
 export default function AuthTestPage() {
-  const [info, setInfo] = useState<AuthInfo>({
-    event: "لم يبدأ الاختبار",
-    userId: null,
-    email: null,
-    hasSession: false,
-    checkedAt: "",
-  });
+  const [info, setInfo] =
+    useState<AuthInfo>({
+      event: "لم يبدأ الاختبار",
+      userId: null,
+      email: null,
+      hasSession: false,
+      checkedAt: "",
+    });
 
-  const [error, setError] = useState("");
-  const [count, setCount] = useState(0);
+  const [error, setError] =
+    useState("");
+
+  const [count, setCount] =
+    useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -29,34 +40,58 @@ export default function AuthTestPage() {
     async function checkSession() {
       try {
         const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+          data: {
+            session,
+          },
+          error:
+            sessionError,
+        } =
+          await supabase.auth.getSession();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
         if (sessionError) {
-          setError(sessionError.message);
+          setError(
+            sessionError.message
+          );
+
           return;
         }
 
         setInfo({
-          event: "SESSION CHECK",
-          userId: session?.user?.id || null,
-          email: session?.user?.email || null,
-          hasSession: !!session,
-          checkedAt: new Date().toLocaleTimeString(
-            "ar-EG"
-          ),
+          event:
+            "SESSION CHECK",
+          userId:
+            session?.user?.id ||
+            null,
+          email:
+            session?.user?.email ||
+            null,
+          hasSession:
+            !!session,
+          checkedAt:
+            new Date().toLocaleTimeString(
+              "ar-EG"
+            ),
         });
 
-        setCount((value) => value + 1);
+        setCount(
+          (
+            value
+          ) =>
+            value + 1
+        );
       } catch (err) {
-        console.error(err);
+        console.error(
+          err
+        );
 
         if (mounted) {
           setError(
-            err instanceof Error
+            err instanceof
+              Error
               ? err.message
               : "حدث خطأ غير معروف"
           );
@@ -64,43 +99,61 @@ export default function AuthTestPage() {
       }
     }
 
-    checkSession();
+    void checkSession();
 
-    const timer = setInterval(
-      checkSession,
-      1000
-    );
+    const timer =
+      window.setInterval(
+        () => {
+          void checkSession();
+        },
+        1000
+      );
 
     const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!mounted) return;
+      data: {
+        subscription,
+      },
+    } =
+      supabase.auth.onAuthStateChange(
+        (
+          event: AuthChangeEvent,
+          session: Session | null
+        ) => {
+          if (!mounted) {
+            return;
+          }
 
-        console.log(
-          "AUTH TEST EVENT:",
-          event,
-          session
-        );
+          console.log(
+            "AUTH TEST EVENT:",
+            event,
+            session
+          );
 
-        setInfo({
-          event,
-          userId:
-            session?.user?.id || null,
-          email:
-            session?.user?.email || null,
-          hasSession: !!session,
-          checkedAt:
-            new Date().toLocaleTimeString(
-              "ar-EG"
-            ),
-        });
-      }
-    );
+          setInfo({
+            event,
+            userId:
+              session?.user?.id ||
+              null,
+            email:
+              session?.user?.email ||
+              null,
+            hasSession:
+              !!session,
+            checkedAt:
+              new Date().toLocaleTimeString(
+                "ar-EG"
+              ),
+          });
+        }
+      );
 
     return () => {
       mounted = false;
-      clearInterval(timer);
+
+      window.clearInterval(
+        timer
+      );
+
       subscription.unsubscribe();
     };
   }, []);
@@ -154,7 +207,8 @@ export default function AuthTestPage() {
             </p>
 
             <p className="mt-1 break-all text-gray-700">
-              {info.email || "لا يوجد"}
+              {info.email ||
+                "لا يوجد"}
             </p>
           </div>
 
@@ -164,7 +218,8 @@ export default function AuthTestPage() {
             </p>
 
             <p className="mt-1 break-all text-xs text-gray-700">
-              {info.userId || "لا يوجد"}
+              {info.userId ||
+                "لا يوجد"}
             </p>
           </div>
 
@@ -174,7 +229,8 @@ export default function AuthTestPage() {
             </p>
 
             <p className="mt-1 text-gray-700">
-              {info.checkedAt || "—"}
+              {info.checkedAt ||
+                "—"}
             </p>
           </div>
 

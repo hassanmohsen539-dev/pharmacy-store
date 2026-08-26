@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "../../../lib/supabase";
@@ -31,25 +35,29 @@ const CATEGORY_INFO: Record<
 > = {
   medicines: {
     title: "الأدوية",
-    description: "أدوية ومستلزمات علاجية",
+    description:
+      "أدوية ومستلزمات علاجية",
     icon: "💊",
   },
 
   "skin-care": {
     title: "العناية بالبشرة",
-    description: "منتجات العناية بالبشرة",
+    description:
+      "منتجات العناية بالبشرة",
     icon: "🧴",
   },
 
   kids: {
     title: "الأطفال",
-    description: "منتجات الأطفال والأمهات",
+    description:
+      "منتجات الأطفال والأمهات",
     icon: "🍼",
   },
 
   "medical-devices": {
     title: "الأجهزة الطبية",
-    description: "أجهزة ومستلزمات طبية",
+    description:
+      "أجهزة ومستلزمات طبية",
     icon: "🩺",
   },
 };
@@ -57,11 +65,12 @@ const CATEGORY_INFO: Record<
 export default function CategoryPage() {
   const params = useParams();
 
-  const categoryParam = Array.isArray(
-    params.category
-  )
-    ? params.category[0]
-    : params.category;
+  const categoryParam =
+    Array.isArray(
+      params.category
+    )
+      ? params.category[0]
+      : params.category;
 
   const category =
     categoryParam || "";
@@ -76,7 +85,9 @@ export default function CategoryPage() {
     useState(true);
 
   const [error, setError] =
-    useState<string | null>(null);
+    useState<string | null>(
+      null
+    );
 
   const [search, setSearch] =
     useState("");
@@ -87,10 +98,16 @@ export default function CategoryPage() {
   const [cartOpen, setCartOpen] =
     useState(false);
 
-  const [checkoutOpen, setCheckoutOpen] =
+  const [
+    checkoutOpen,
+    setCheckoutOpen,
+  ] =
     useState(false);
 
-  const [customerName, setCustomerName] =
+  const [
+    customerName,
+    setCustomerName,
+  ] =
     useState("");
 
   const [phone, setPhone] =
@@ -126,12 +143,9 @@ export default function CategoryPage() {
           "category",
           category
         )
-        .order(
-          "id",
-          {
-            ascending: true,
-          }
-        );
+        .order("id", {
+          ascending: true,
+        });
 
       if (productsError) {
         throw productsError;
@@ -164,7 +178,7 @@ export default function CategoryPage() {
       return;
     }
 
-    loadProducts();
+    void loadProducts();
   }, [category]);
 
   // =====================================================
@@ -183,7 +197,7 @@ export default function CategoryPage() {
       }
 
       return products.filter(
-        (product) =>
+        (product: Product) =>
           product.name_ar
             .toLowerCase()
             .includes(text) ||
@@ -220,10 +234,14 @@ export default function CategoryPage() {
     }
 
     setCart(
-      (currentCart) => {
+      (
+        currentCart: CartItem[]
+      ) => {
         const existing =
           currentCart.find(
-            (item) =>
+            (
+              item: CartItem
+            ) =>
               item.id ===
               product.id
           );
@@ -241,7 +259,9 @@ export default function CategoryPage() {
           }
 
           return currentCart.map(
-            (item) =>
+            (
+              item: CartItem
+            ) =>
               item.id ===
               product.id
                 ? {
@@ -285,9 +305,13 @@ export default function CategoryPage() {
     id: number
   ) {
     setCart(
-      (currentCart) =>
+      (
+        currentCart: CartItem[]
+      ) =>
         currentCart.map(
-          (item) => {
+          (
+            item: CartItem
+          ) => {
             if (
               item.id !== id
             ) {
@@ -320,12 +344,15 @@ export default function CategoryPage() {
     id: number
   ) {
     setCart(
-      (currentCart) =>
+      (
+        currentCart: CartItem[]
+      ) =>
         currentCart
           .map(
-            (item) =>
-              item.id ===
-              id
+            (
+              item: CartItem
+            ) =>
+              item.id === id
                 ? {
                     ...item,
                     quantity:
@@ -335,16 +362,20 @@ export default function CategoryPage() {
                 : item
           )
           .filter(
-            (item) =>
-              item.quantity >
-              0
+            (
+              item: CartItem
+            ) =>
+              item.quantity > 0
           )
     );
   }
 
   const cartCount =
     cart.reduce(
-      (sum, item) =>
+      (
+        sum: number,
+        item: CartItem
+      ) =>
         sum +
         item.quantity,
       0
@@ -352,7 +383,10 @@ export default function CategoryPage() {
 
   const cartTotal =
     cart.reduce(
-      (sum, item) =>
+      (
+        sum: number,
+        item: CartItem
+      ) =>
         sum +
         Number(
           item.price
@@ -436,7 +470,10 @@ export default function CategoryPage() {
 
       const productIds =
         cart.map(
-          (item) => item.id
+          (
+            item: CartItem
+          ) =>
+            item.id
         );
 
       const {
@@ -470,7 +507,9 @@ export default function CategoryPage() {
       ) {
         const latest =
           latestProducts?.find(
-            (item) =>
+            (
+              item: Product
+            ) =>
               item.id ===
               cartItem.id
           );
@@ -556,10 +595,14 @@ export default function CategoryPage() {
 
       const orderItems =
         cart.map(
-          (item) => {
+          (
+            item: CartItem
+          ) => {
             const latest =
               latestProducts?.find(
-                (product) =>
+                (
+                  product: Product
+                ) =>
                   product.id ===
                   item.id
               );
@@ -800,7 +843,8 @@ export default function CategoryPage() {
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-800 sm:text-3xl">
-              منتجات {categoryInfo.title}
+              منتجات{" "}
+              {categoryInfo.title}
             </h2>
 
             <p className="mt-2 text-gray-500">
@@ -869,9 +913,13 @@ export default function CategoryPage() {
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             {filteredProducts.map(
-              (product) => (
+              (
+                product: Product
+              ) => (
                 <div
-                  key={product.id}
+                  key={
+                    product.id
+                  }
                   className="min-w-0 rounded-2xl border border-gray-100 bg-white p-3 shadow-sm sm:p-5"
                 >
                   <div className="flex h-36 items-center justify-center overflow-hidden rounded-xl bg-green-50 sm:h-48">
@@ -894,7 +942,9 @@ export default function CategoryPage() {
                   </div>
 
                   <h3 className="mt-3 break-words text-base font-bold text-gray-800 sm:mt-4 sm:text-lg">
-                    {product.name_ar}
+                    {
+                      product.name_ar
+                    }
                   </h3>
 
                   {product.name_en && (
@@ -902,18 +952,24 @@ export default function CategoryPage() {
                       dir="ltr"
                       className="mt-1 truncate text-xs text-gray-400 sm:text-sm"
                     >
-                      {product.name_en}
+                      {
+                        product.name_en
+                      }
                     </p>
                   )}
 
                   <p className="mt-2 min-h-[40px] text-xs text-gray-500 sm:min-h-[48px] sm:text-sm">
-                    {product.description ||
-                      "لا يوجد وصف"}
+                    {
+                      product.description ||
+                      "لا يوجد وصف"
+                    }
                   </p>
 
                   <div className="mt-3 flex items-center justify-between gap-2">
                     <span className="text-base font-bold text-green-700 sm:text-xl">
-                      {product.price}{" "}
+                      {
+                        product.price
+                      }{" "}
                       جنيه
                     </span>
 
@@ -921,7 +977,9 @@ export default function CategoryPage() {
                     0 ? (
                       <span className="text-xs font-bold text-gray-500">
                         متوفر:{" "}
-                        {product.stock}
+                        {
+                          product.stock
+                        }
                       </span>
                     ) : (
                       <span className="text-xs font-bold text-red-600">
@@ -994,7 +1052,9 @@ export default function CategoryPage() {
                 <>
                   <div className="space-y-4">
                     {cart.map(
-                      (item) => (
+                      (
+                        item: CartItem
+                      ) => (
                         <div
                           key={
                             item.id
