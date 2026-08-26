@@ -3,46 +3,169 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { useLanguage } from "../language-provider";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resetting, setResetting] = useState(false);
+  const {
+    language,
+    toggleLanguage,
+    dir,
+  } = useLanguage();
+
+  const isArabic = language === "ar";
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [resetting, setResetting] =
+    useState(false);
+
+  const text = {
+    pharmacyName: isArabic
+      ? "صيدلية الشفاء"
+      : "Al Shifa Pharmacy",
+
+    priority: isArabic
+      ? "صحتك أولويتنا"
+      : "Your health is our priority",
+
+    language: isArabic
+      ? "English"
+      : "العربية",
+
+    loginTitle: isArabic
+      ? "تسجيل الدخول"
+      : "Login",
+
+    loginSubtitle: isArabic
+      ? "سجل الدخول إلى حسابك"
+      : "Sign in to your account",
+
+    email: isArabic
+      ? "البريد الإلكتروني"
+      : "Email address",
+
+    emailPlaceholder:
+      "example@email.com",
+
+    password: isArabic
+      ? "كلمة المرور"
+      : "Password",
+
+    passwordPlaceholder: isArabic
+      ? "اكتب كلمة المرور"
+      : "Enter your password",
+
+    forgotPassword: isArabic
+      ? "نسيت كلمة المرور؟"
+      : "Forgot password?",
+
+    sending: isArabic
+      ? "جاري الإرسال..."
+      : "Sending...",
+
+    loggingIn: isArabic
+      ? "جاري تسجيل الدخول..."
+      : "Signing in...",
+
+    loginButton: isArabic
+      ? "تسجيل الدخول 🔐"
+      : "Login 🔐",
+
+    noAccount: isArabic
+      ? "ليس لديك حساب؟"
+      : "Don't have an account?",
+
+    createAccount: isArabic
+      ? "إنشاء حساب جديد"
+      : "Create a new account",
+
+    backHome: isArabic
+      ? "← العودة إلى الصفحة الرئيسية"
+      : "← Back to homepage",
+
+    fillFields: isArabic
+      ? "من فضلك اكتب البريد الإلكتروني وكلمة المرور"
+      : "Please enter your email and password.",
+
+    noSession: isArabic
+      ? "تم تسجيل الدخول ولكن لم يتم إنشاء جلسة للحساب."
+      : "You are logged in, but no session was created for this account.",
+
+    adminSuccess: isArabic
+      ? "تم تسجيل دخول الأدمن بنجاح 🎉"
+      : "Admin login successful 🎉",
+
+    loginSuccess: isArabic
+      ? "تم تسجيل الدخول بنجاح 🎉"
+      : "Login successful 🎉",
+
+    loginUnexpected: isArabic
+      ? "حدث خطأ غير متوقع، حاول مرة أخرى."
+      : "An unexpected error occurred. Please try again.",
+
+    resetFirst: isArabic
+      ? "اكتب البريد الإلكتروني أولاً، ثم اضغط نسيت كلمة المرور."
+      : "Enter your email first, then click Forgot password.",
+
+    resetSuccess: isArabic
+      ? "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني 📩\n\nافتح البريد واضغط على الرابط لتعيين كلمة مرور جديدة."
+      : "A password reset link has been sent to your email 📩\n\nOpen the email and click the link to set a new password.",
+
+    resetError: isArabic
+      ? "تعذر إرسال رابط استعادة كلمة المرور:\n\n"
+      : "Unable to send the password reset link:\n\n",
+
+    resetUnexpected: isArabic
+      ? "حدث خطأ غير متوقع أثناء إرسال رابط الاستعادة."
+      : "An unexpected error occurred while sending the reset link.",
+  };
 
   async function handleLogin(
     e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
 
-    if (!email.trim() || !password) {
+    if (
+      !email.trim() ||
+      !password
+    ) {
       alert(
-        "من فضلك اكتب البريد الإلكتروني وكلمة المرور"
+        text.fillFields
       );
+
       return;
     }
 
-    if (loading || resetting) {
+    if (
+      loading ||
+      resetting
+    ) {
       return;
     }
 
     setLoading(true);
 
     try {
-      // =====================================================
-      // تسجيل الدخول
-      // =====================================================
-
       const {
         data: loginData,
         error: loginError,
       } =
-        await supabase.auth.signInWithPassword({
-          email: email.trim(),
-          password,
-        });
+        await supabase.auth.signInWithPassword(
+          {
+            email:
+              email.trim(),
+            password,
+          }
+        );
 
       if (loginError) {
         console.error(
@@ -50,25 +173,30 @@ export default function LoginPage() {
           loginError
         );
 
-        alert(loginError.message);
+        alert(
+          loginError.message
+        );
+
         return;
       }
 
-      // =====================================================
-      // نتأكد أن Supabase أعادت User + Session
-      // =====================================================
+      const user =
+        loginData.user;
 
-      const user = loginData.user;
-      const session = loginData.session;
+      const session =
+        loginData.session;
 
-      if (!user || !session) {
+      if (
+        !user ||
+        !session
+      ) {
         console.error(
           "LOGIN RESULT WITHOUT SESSION:",
           loginData
         );
 
         alert(
-          "تم تسجيل الدخول ولكن لم يتم إنشاء جلسة للحساب."
+          text.noSession
         );
 
         return;
@@ -84,21 +212,24 @@ export default function LoginPage() {
         !!session
       );
 
-      // =====================================================
-      // فحص صلاحية الحساب
-      // =====================================================
-
-      let role: string | null = null;
+      let role:
+        | string
+        | null =
+        null;
 
       try {
         const {
           data: profile,
-          error: profileError,
+          error:
+            profileError,
         } =
           await supabase
             .from("profiles")
             .select("role")
-            .eq("id", user.id)
+            .eq(
+              "id",
+              user.id
+            )
             .maybeSingle();
 
         if (profileError) {
@@ -108,7 +239,8 @@ export default function LoginPage() {
           );
         } else {
           role =
-            profile?.role || null;
+            profile?.role ||
+            null;
         }
       } catch (error) {
         console.error(
@@ -117,13 +249,12 @@ export default function LoginPage() {
         );
       }
 
-      // =====================================================
-      // التوجيه
-      // =====================================================
-
-      if (role === "admin") {
+      if (
+        role ===
+        "admin"
+      ) {
         alert(
-          "تم تسجيل دخول الأدمن بنجاح 🎉"
+          text.adminSuccess
         );
 
         router.replace(
@@ -134,7 +265,7 @@ export default function LoginPage() {
       }
 
       alert(
-        "تم تسجيل الدخول بنجاح 🎉"
+        text.loginSuccess
       );
 
       router.replace("/");
@@ -145,19 +276,18 @@ export default function LoginPage() {
       );
 
       alert(
-        "حدث خطأ غير متوقع، حاول مرة أخرى."
+        text.loginUnexpected
       );
     } finally {
       setLoading(false);
     }
   }
 
-  // =====================================================
-  // نسيت كلمة المرور
-  // =====================================================
-
   async function handleForgotPassword() {
-    if (loading || resetting) {
+    if (
+      loading ||
+      resetting
+    ) {
       return;
     }
 
@@ -166,7 +296,7 @@ export default function LoginPage() {
 
     if (!emailValue) {
       alert(
-        "اكتب البريد الإلكتروني أولاً، ثم اضغط نسيت كلمة المرور."
+        text.resetFirst
       );
 
       return;
@@ -195,7 +325,7 @@ export default function LoginPage() {
         );
 
         alert(
-          "تعذر إرسال رابط استعادة كلمة المرور:\n\n" +
+          text.resetError +
             error.message
         );
 
@@ -203,7 +333,7 @@ export default function LoginPage() {
       }
 
       alert(
-        "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني 📩\n\nافتح البريد واضغط على الرابط لتعيين كلمة مرور جديدة."
+        text.resetSuccess
       );
     } catch (error) {
       console.error(
@@ -212,19 +342,38 @@ export default function LoginPage() {
       );
 
       alert(
-        "حدث خطأ غير متوقع أثناء إرسال رابط الاستعادة."
+        text.resetUnexpected
       );
     } finally {
-      setResetting(false);
+      setResetting(
+        false
+      );
     }
   }
 
   return (
     <main
-      dir="rtl"
+      dir={dir}
       className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6"
     >
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+
+        {/* اللغة */}
+
+        <div className="mb-5 flex justify-end">
+          <button
+            type="button"
+            onClick={
+              toggleLanguage
+            }
+            className="rounded-lg border border-purple-600 bg-white px-3 py-2 text-sm font-bold text-purple-700 shadow-sm hover:bg-purple-50"
+          >
+            🌐{" "}
+            {
+              text.language
+            }
+          </button>
+        </div>
 
         {/* الشعار */}
 
@@ -234,11 +383,15 @@ export default function LoginPage() {
           </div>
 
           <h1 className="mt-5 text-3xl font-bold text-green-700">
-            صيدلية الشفاء
+            {
+              text.pharmacyName
+            }
           </h1>
 
           <p className="mt-2 text-gray-500">
-            صحتك أولويتنا
+            {
+              text.priority
+            }
           </p>
         </div>
 
@@ -246,42 +399,59 @@ export default function LoginPage() {
 
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold text-gray-800">
-            تسجيل الدخول
+            {
+              text.loginTitle
+            }
           </h2>
 
           <p className="mt-2 text-gray-500">
-            سجل الدخول إلى حسابك
+            {
+              text.loginSubtitle
+            }
           </p>
         </div>
 
         {/* النموذج */}
 
         <form
-          onSubmit={handleLogin}
+          onSubmit={
+            handleLogin
+          }
           className="space-y-5"
         >
           {/* البريد */}
 
           <div>
             <label className="mb-2 block font-bold text-gray-700">
-              البريد الإلكتروني
+              {
+                text.email
+              }
             </label>
 
             <input
               type="email"
               value={email}
-              onChange={(e) =>
+              onChange={(
+                e
+              ) =>
                 setEmail(
                   e.target.value
                 )
               }
-              placeholder="example@email.com"
+              placeholder={
+                text.emailPlaceholder
+              }
               autoComplete="email"
               disabled={
                 loading ||
                 resetting
               }
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-right text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
+              dir="ltr"
+              className={`w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100 ${
+                isArabic
+                  ? "text-right"
+                  : "text-left"
+              }`}
             />
           </div>
 
@@ -290,7 +460,9 @@ export default function LoginPage() {
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
               <label className="block font-bold text-gray-700">
-                كلمة المرور
+                {
+                  text.password
+                }
               </label>
 
               <button
@@ -302,29 +474,37 @@ export default function LoginPage() {
                   loading ||
                   resetting
                 }
-                className="font-semibold text-sm text-green-600 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-sm font-semibold text-green-600 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {resetting
-                  ? "جاري الإرسال..."
-                  : "نسيت كلمة المرور؟"}
+                  ? text.sending
+                  : text.forgotPassword}
               </button>
             </div>
 
             <input
               type="password"
               value={password}
-              onChange={(e) =>
+              onChange={(
+                e
+              ) =>
                 setPassword(
                   e.target.value
                 )
               }
-              placeholder="اكتب كلمة المرور"
+              placeholder={
+                text.passwordPlaceholder
+              }
               autoComplete="current-password"
               disabled={
                 loading ||
                 resetting
               }
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-right text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
+              className={`w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100 ${
+                isArabic
+                  ? "text-right"
+                  : "text-left"
+              }`}
             />
           </div>
 
@@ -339,8 +519,8 @@ export default function LoginPage() {
             className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading
-              ? "جاري تسجيل الدخول..."
-              : "تسجيل الدخول 🔐"}
+              ? text.loggingIn
+              : text.loginButton}
           </button>
         </form>
 
@@ -348,14 +528,18 @@ export default function LoginPage() {
 
         <div className="mt-7 text-center">
           <p className="text-gray-500">
-            ليس لديك حساب؟
+            {
+              text.noAccount
+            }
           </p>
 
           <a
             href="/register"
             className="mt-2 inline-block font-bold text-green-600 hover:text-green-700"
           >
-            إنشاء حساب جديد
+            {
+              text.createAccount
+            }
           </a>
         </div>
 
@@ -366,7 +550,9 @@ export default function LoginPage() {
             href="/"
             className="font-semibold text-gray-500 hover:text-green-600"
           >
-            ← العودة إلى الصفحة الرئيسية
+            {
+              text.backHome
+            }
           </a>
         </div>
       </div>
