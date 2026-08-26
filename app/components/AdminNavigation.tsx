@@ -7,18 +7,35 @@ import { supabase } from "../../lib/supabase";
 
 export default function AdminNavigation() {
   const pathname = usePathname();
+
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
   useEffect(() => {
     let mounted = true;
 
     async function checkAdmin() {
+      setCheckingAdmin(true);
+
       try {
         const {
           data: { session },
+          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
+
+        if (sessionError) {
+          console.error(
+            "ADMIN SESSION ERROR:",
+            sessionError
+          );
+
+          setIsAdmin(false);
+          return;
+        }
 
         if (!session?.user) {
           setIsAdmin(false);
@@ -27,122 +44,66 @@ export default function AdminNavigation() {
 
         const userId = session.user.id;
 
-        // لا ننفذ استعلام Supabase مباشرة داخل auth callback
-        setTimeout(async () => {
-          try {
-            const {
-              data: profile,
-              error,
-            } = await supabase
-              .from("profiles")
-              .select("role")
-              .eq("id", userId)
-              .maybeSingle();
+        const {
+          data: profile,
+          error: profileError,
+        } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .maybeSingle();
 
-            if (!mounted) return;
+        if (!mounted) {
+          return;
+        }
 
-            if (error) {
-              console.error(
-                "ADMIN PROFILE ERROR:",
-                error
-              );
+        if (profileError) {
+          console.error(
+            "ADMIN PROFILE ERROR:",
+            profileError
+          );
 
-              setIsAdmin(false);
-              return;
-            }
+          setIsAdmin(false);
+          return;
+        }
 
-            setIsAdmin(
-              profile?.role === "admin"
-            );
-          } catch (error) {
-            console.error(
-              "CHECK ADMIN ERROR:",
-              error
-            );
-
-            if (mounted) {
-              setIsAdmin(false);
-            }
-          }
-        }, 0);
+        setIsAdmin(
+          profile?.role === "admin"
+        );
       } catch (error) {
         console.error(
-          "ADMIN AUTH ERROR:",
+          "CHECK ADMIN ERROR:",
           error
         );
 
         if (mounted) {
           setIsAdmin(false);
         }
+      } finally {
+        if (mounted) {
+          setCheckingAdmin(false);
+        }
       }
     }
 
     checkAdmin();
 
-    // لو الحساب دخل أو خرج، نعيد فحص الصلاحية
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (!session?.user) {
-          setIsAdmin(false);
-          return;
-        }
-
-        const userId = session.user.id;
-
-        setTimeout(async () => {
-          try {
-            const {
-              data: profile,
-              error,
-            } = await supabase
-              .from("profiles")
-              .select("role")
-              .eq("id", userId)
-              .maybeSingle();
-
-            if (!mounted) return;
-
-            if (error) {
-              console.error(
-                "AUTH ADMIN PROFILE ERROR:",
-                error
-              );
-
-              setIsAdmin(false);
-              return;
-            }
-
-            setIsAdmin(
-              profile?.role === "admin"
-            );
-          } catch (error) {
-            console.error(
-              "AUTH ADMIN CHECK ERROR:",
-              error
-            );
-
-            if (mounted) {
-              setIsAdmin(false);
-            }
-          }
-        }, 0);
-      }
-    );
-
     return () => {
       mounted = false;
-      subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   // صفحات الأدمن لها شريط خاص بها
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  // العميل العادي لا يرى الشريط
+  // أثناء التحقق لا نظهر أي شيء
+  if (checkingAdmin) {
+    return null;
+  }
+
+  // العميل العادي لا يرى شريط الأدمن
   if (!isAdmin) {
     return null;
   }
