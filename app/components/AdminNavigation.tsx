@@ -1,116 +1,112 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { supabase } from "../../lib/supabase";
-import { useAuth } from "../auth-provider";
 
 export default function AdminNavigation() {
   const pathname = usePathname();
 
-  const {
-    user,
-    loading: authLoading,
-  } = useAuth();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
-  const [isAdmin, setIsAdmin] =
-    useState(false);
+  const checkAdmin = useCallback(async () => {
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
 
-  const [checkingAdmin, setCheckingAdmin] =
-    useState(true);
+      if (sessionError) {
+        console.error(
+          "ADMIN SESSION ERROR:",
+          sessionError
+        );
+
+        setIsAdmin(false);
+        return;
+      }
+
+      if (!session?.user) {
+        setIsAdmin(false);
+        return;
+      }
+
+      const {
+        data: profile,
+        error: profileError,
+      } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error(
+          "ADMIN PROFILE ERROR:",
+          profileError
+        );
+
+        setIsAdmin(false);
+        return;
+      }
+
+      setIsAdmin(profile?.role === "admin");
+    } catch (error) {
+      console.error(
+        "CHECK ADMIN ERROR:",
+        error
+      );
+
+      setIsAdmin(false);
+    } finally {
+      setCheckingAdmin(false);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
 
-    async function checkAdmin() {
+    async function runCheck() {
       if (!mounted) {
         return;
       }
 
-      // أثناء تحميل Auth ننتظر
-      if (authLoading) {
-        setCheckingAdmin(true);
-        return;
-      }
-
-      // لا يوجد مستخدم
-      if (!user) {
-        if (mounted) {
-          setIsAdmin(false);
-          setCheckingAdmin(false);
-        }
-
-        return;
-      }
-
-      try {
-        const {
-          data: profile,
-          error: profileError,
-        } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        if (!mounted) {
-          return;
-        }
-
-        if (profileError) {
-          console.error(
-            "ADMIN PROFILE ERROR:",
-            profileError
-          );
-
-          setIsAdmin(false);
-          setCheckingAdmin(false);
-
-          return;
-        }
-
-        setIsAdmin(
-          profile?.role === "admin"
-        );
-      } catch (error) {
-        console.error(
-          "CHECK ADMIN ERROR:",
-          error
-        );
-
-        if (mounted) {
-          setIsAdmin(false);
-        }
-      } finally {
-        if (mounted) {
-          setCheckingAdmin(false);
-        }
-      }
+      setCheckingAdmin(true);
+      await checkAdmin();
     }
 
-    void checkAdmin();
+    // فحص أول
+    runCheck();
+
+    // أحيانًا Session تحتاج لحظة بعد الانتقال
+    const timer1 = setTimeout(() => {
+      if (mounted) {
+        checkAdmin();
+      }
+    }, 500);
+
+    const timer2 = setTimeout(() => {
+      if (mounted) {
+        checkAdmin();
+      }
+    }, 1500);
 
     return () => {
       mounted = false;
+      clearTimeout(timer1);
+      clearTimeout(timer2);
     };
-  }, [
-    user,
-    authLoading,
-  ]);
+  }, [checkAdmin, pathname]);
 
   // صفحات الأدمن لها شريطها الخاص
-  if (
-    pathname.startsWith("/admin")
-  ) {
+  if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  // أثناء تحميل Auth أو فحص صلاحية الأدمن
-  if (
-    authLoading ||
-    checkingAdmin
-  ) {
+  // أثناء التحقق
+  if (checkingAdmin) {
     return null;
   }
 
