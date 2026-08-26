@@ -9,10 +9,24 @@ export default function AdminNavigation() {
   const pathname = usePathname();
 
   const [isAdmin, setIsAdmin] = useState(false);
-  const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [checkingAdmin, setCheckingAdmin] = useState(false);
 
   useEffect(() => {
     let mounted = true;
+
+    // =====================================================
+    // أهم تعديل:
+    // صفحات العميل لا تحتاج أي فحص Supabase للأدمن.
+    // =====================================================
+
+    if (!pathname.startsWith("/admin")) {
+      setIsAdmin(false);
+      setCheckingAdmin(false);
+
+      return () => {
+        mounted = false;
+      };
+    }
 
     async function checkAdmin() {
       setCheckingAdmin(true);
@@ -42,15 +56,13 @@ export default function AdminNavigation() {
           return;
         }
 
-        const userId = session.user.id;
-
         const {
           data: profile,
           error: profileError,
         } = await supabase
           .from("profiles")
           .select("role")
-          .eq("id", userId)
+          .eq("id", session.user.id)
           .maybeSingle();
 
         if (!mounted) {
@@ -93,18 +105,13 @@ export default function AdminNavigation() {
     };
   }, [pathname]);
 
-  // صفحات الأدمن لها شريط خاص بها
+  // صفحات الأدمن نفسها لها شريطها الخاص
   if (pathname.startsWith("/admin")) {
     return null;
   }
 
-  // أثناء التحقق لا نظهر أي شيء
-  if (checkingAdmin) {
-    return null;
-  }
-
-  // العميل العادي لا يرى شريط الأدمن
-  if (!isAdmin) {
+  // العميل العادي لا يرى أي شيء
+  if (checkingAdmin || !isAdmin) {
     return null;
   }
 
