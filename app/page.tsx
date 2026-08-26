@@ -223,10 +223,6 @@ export default function Home() {
       ? "لا يوجد وصف"
       : "No description",
 
-    available: isArabic
-      ? "متوفر"
-      : "Available",
-
     unavailable: isArabic
       ? "غير متوفر"
       : "Out of stock",
@@ -429,6 +425,9 @@ export default function Home() {
   const currentUserIdRef =
     useRef<string | null>(null);
 
+  const accessTokenRef =
+    useRef<string | null>(null);
+
   // =====================================================
   // الصوت
   // =====================================================
@@ -585,6 +584,7 @@ export default function Home() {
             ? "المتصفح لا يدعم تشغيل صوت التنبيهات."
             : "Your browser does not support notification sounds."
         );
+
         return;
       }
 
@@ -709,7 +709,9 @@ export default function Home() {
         error
       );
 
-      setProducts([]);
+      setProducts(
+        []
+      );
 
       setProductsError(
         error instanceof Error
@@ -762,13 +764,16 @@ export default function Home() {
                 false,
             }
           )
-          .limit(100);
+          .limit(
+            100
+          );
 
       if (error) {
         console.error(
           "LOAD NOTIFICATIONS ERROR:",
           error
         );
+
         return;
       }
 
@@ -927,14 +932,19 @@ export default function Home() {
 
   // =====================================================
   // فحص تلقائي للإشعارات
+  // بدون getSession
   // =====================================================
 
   async function checkCustomerNotifications() {
     const activeUserId =
       currentUserIdRef.current;
 
+    const accessToken =
+      accessTokenRef.current;
+
     if (
       !activeUserId ||
+      !accessToken ||
       checkingNotificationsRef.current
     ) {
       return;
@@ -944,36 +954,27 @@ export default function Home() {
       true;
 
     try {
-      const {
-        data: {
-          session,
-        },
-      } =
-        await supabase.auth.getSession();
-
-      if (
-        !session?.access_token
-      ) {
-        return;
-      }
-
       const response =
         await fetch(
           "/api/customer/orders",
           {
             method:
               "POST",
+
             headers: {
               "Content-Type":
                 "application/json",
+
               Authorization:
-                `Bearer ${session.access_token}`,
+                `Bearer ${accessToken}`,
             },
+
             body:
               JSON.stringify({
                 action:
                   "load_all",
               }),
+
             cache:
               "no-store",
           }
@@ -1096,8 +1097,12 @@ export default function Home() {
         error: ordersError,
       } =
         await supabase
-          .from("orders")
-          .select("id")
+          .from(
+            "orders"
+          )
+          .select(
+            "id"
+          )
           .eq(
             "user_id",
             currentUserId
@@ -1110,6 +1115,7 @@ export default function Home() {
         setQuantityChanges(
           []
         );
+
         return;
       }
 
@@ -1149,6 +1155,7 @@ export default function Home() {
           "LOAD QUANTITY CHANGES ERROR:",
           error
         );
+
         return;
       }
 
@@ -1165,11 +1172,14 @@ export default function Home() {
   }
 
   // =====================================================
-  // مسح حالة المستخدم
+  // المستخدم والجلسة
   // =====================================================
 
   function clearCustomerState() {
     currentUserIdRef.current =
+      null;
+
+    accessTokenRef.current =
       null;
 
     setUserId(
@@ -1202,10 +1212,6 @@ export default function Home() {
     locallyDeletedNotificationIdsRef.current.clear();
   }
 
-  // =====================================================
-  // تطبيق الجلسة بدون refreshSession
-  // =====================================================
-
   function applySession(
     session: Session
   ) {
@@ -1214,6 +1220,9 @@ export default function Home() {
 
     currentUserIdRef.current =
       user.id;
+
+    accessTokenRef.current =
+      session.access_token;
 
     setUserId(
       user.id
@@ -1258,62 +1267,6 @@ export default function Home() {
 
   useEffect(() => {
     let mounted = true;
-
-    async function initializeAuth() {
-      setLoadingUser(
-        true
-      );
-
-      try {
-        const {
-          data: {
-            session,
-          },
-          error,
-        } =
-          await supabase.auth.getSession();
-
-        if (!mounted) {
-          return;
-        }
-
-        if (error) {
-          console.error(
-            "INITIAL SESSION ERROR:",
-            error
-          );
-
-          setLoadingUser(
-            false
-          );
-
-          return;
-        }
-
-        if (session) {
-          applySession(
-            session
-          );
-        } else {
-          setLoadingUser(
-            false
-          );
-        }
-      } catch (error) {
-        console.error(
-          "INITIAL AUTH ERROR:",
-          error
-        );
-
-        if (mounted) {
-          setLoadingUser(
-            false
-          );
-        }
-      }
-    }
-
-    void initializeAuth();
 
     const {
       data: {
@@ -1368,7 +1321,7 @@ export default function Home() {
   }, []);
 
   // =====================================================
-  // تحديث تلقائي
+  // التحديث التلقائي للإشعارات
   // =====================================================
 
   useEffect(() => {
@@ -1610,6 +1563,7 @@ export default function Home() {
         "MARK NOTIFICATION ERROR:",
         error
       );
+
       return;
     }
 
@@ -1971,7 +1925,8 @@ export default function Home() {
 
       const {
         data: order,
-        error: orderError,
+        error:
+          orderError,
       } =
         await supabase
           .from(
@@ -2027,7 +1982,9 @@ export default function Home() {
           )
           .maybeSingle();
 
-      if (changeError) {
+      if (
+        changeError
+      ) {
         alert(
           isArabic
             ? "حدث خطأ أثناء التحقق من التعديل:\n" +
@@ -2473,6 +2430,10 @@ export default function Home() {
       0
     );
 
+  // =====================================================
+  // الحسابات
+  // =====================================================
+
   const unreadNotifications =
     notifications.filter(
       (
@@ -2713,23 +2674,17 @@ export default function Home() {
           .insert({
             user_id:
               user.id,
-
             customer_name:
               customerName.trim(),
-
             phone:
               phone.trim(),
-
             address:
               address.trim(),
-
             notes:
               notes.trim() ||
               null,
-
             total:
               cartTotal,
-
             status:
               "جديد",
           })
@@ -2767,28 +2722,20 @@ export default function Home() {
           ) => ({
             order_id:
               order.id,
-
             product_id:
               item.id,
-
             product_name:
               item.name_ar,
-
             price:
               item.price,
-
             requested_quantity:
               item.quantity,
-
             approved_quantity:
               item.quantity,
-
             quantity:
               item.quantity,
-
             customer_approval:
               null,
-
             approval_message:
               null,
           })
@@ -2832,7 +2779,9 @@ export default function Home() {
         return;
       }
 
-      setCart([]);
+      setCart(
+        []
+      );
 
       setCheckoutOpen(
         false
@@ -2913,11 +2862,15 @@ export default function Home() {
           </div>
 
           <h1 className="mt-4 text-2xl font-bold text-green-700">
-            {t.pharmacyName}
+            {
+              t.pharmacyName
+            }
           </h1>
 
           <p className="mt-4 text-lg font-bold text-gray-800">
-            {t.loadingProducts}
+            {
+              t.loadingProducts
+            }
           </p>
         </div>
       </main>
@@ -2925,7 +2878,7 @@ export default function Home() {
   }
 
   // =====================================================
-  // Products Error
+  // خطأ المنتجات
   // =====================================================
 
   if (
@@ -2942,14 +2895,18 @@ export default function Home() {
           </div>
 
           <h1 className="mt-4 text-2xl font-bold text-red-600">
-            {t.loadProductsError}
+            {
+              t.loadProductsError
+            }
           </h1>
 
           <div
             dir="ltr"
             className="mt-5 rounded-xl bg-red-50 p-4 text-left text-sm text-red-700"
           >
-            {productsError}
+            {
+              productsError
+            }
           </div>
 
           <button
@@ -2958,7 +2915,9 @@ export default function Home() {
             }
             className="mt-6 rounded-xl bg-green-600 px-6 py-3 font-bold text-white"
           >
-            {t.retry}
+            {
+              t.retry
+            }
           </button>
         </div>
       </main>
@@ -3010,7 +2969,9 @@ export default function Home() {
                   }
                   className="rounded-xl border border-gray-300 bg-white px-4 py-3 font-bold text-gray-800"
                 >
-                  {t.close}
+                  {
+                    t.close
+                  }
                 </button>
 
                 <button
@@ -3026,7 +2987,9 @@ export default function Home() {
                   }}
                   className="rounded-xl bg-blue-600 px-4 py-3 font-bold text-white"
                 >
-                  {t.showNotifications}
+                  {
+                    t.showNotifications
+                  }
                 </button>
               </div>
             </div>
@@ -3042,11 +3005,15 @@ export default function Home() {
         <div className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div className="text-center sm:text-right">
             <h1 className="text-2xl font-bold text-green-700">
-              {t.pharmacyName}
+              {
+                t.pharmacyName
+              }
             </h1>
 
             <p className="text-sm text-gray-600">
-              {t.priority}
+              {
+                t.priority
+              }
             </p>
           </div>
 
@@ -3066,7 +3033,9 @@ export default function Home() {
 
             {loadingUser ? (
               <div className="rounded-lg border px-4 py-2 text-sm text-gray-500">
-                {t.loading}
+                {
+                  t.loading
+                }
               </div>
             ) : userEmail ? (
               <>
@@ -3107,7 +3076,9 @@ export default function Home() {
                   }
                   className="rounded-lg border border-red-500 px-3 py-2 text-sm font-semibold text-red-600"
                 >
-                  {t.logout}
+                  {
+                    t.logout
+                  }
                 </button>
               </>
             ) : (
@@ -3116,7 +3087,9 @@ export default function Home() {
                 className="rounded-lg border border-green-600 px-4 py-2 text-sm font-semibold text-green-700"
               >
                 👤{" "}
-                {t.login}
+                {
+                  t.login
+                }
               </a>
             )}
 
@@ -3128,7 +3101,9 @@ export default function Home() {
               }
               className="relative rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white"
             >
-              {t.cart}
+              {
+                t.cart
+              }
 
               {cartCount >
                 0 && (
@@ -3149,11 +3124,15 @@ export default function Home() {
 
       <section className="w-full bg-green-700 px-4 py-10 text-center text-white">
         <h2 className="text-3xl font-bold sm:text-4xl">
-          {t.welcome}
+          {
+            t.welcome
+          }
         </h2>
 
         <p className="mx-auto mt-4 max-w-2xl text-green-100">
-          {t.heroText}
+          {
+            t.heroText
+          }
         </p>
 
         <div className="mx-auto mt-8 flex w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-lg">
@@ -3179,7 +3158,9 @@ export default function Home() {
             type="button"
             className="bg-green-600 px-5 py-3 font-semibold text-white"
           >
-            {t.search} 🔎
+            {
+              t.search
+            } 🔎
           </button>
         </div>
       </section>
@@ -3272,7 +3253,9 @@ export default function Home() {
             <div className="min-h-0 flex-1 overflow-y-auto p-4">
               {notificationsLoading ? (
                 <div className="py-10 text-center font-bold text-green-700">
-                  {t.loading}
+                  {
+                    t.loading
+                  }
                 </div>
               ) : !notifications.length ? (
                 <div className="rounded-xl bg-gray-50 p-10 text-center">
@@ -3447,10 +3430,12 @@ export default function Home() {
                                         }
                                         className="flex-1 rounded-xl bg-green-600 px-5 py-3 font-bold text-white disabled:opacity-50"
                                       >
-                                        {respondingChange ===
-                                        relatedChange.id
-                                          ? t.saving
-                                          : t.approve}
+                                        {
+                                          respondingChange ===
+                                          relatedChange.id
+                                            ? t.saving
+                                            : t.approve
+                                        }
                                       </button>
 
                                       <button
@@ -3466,10 +3451,12 @@ export default function Home() {
                                         }
                                         className="flex-1 rounded-xl bg-red-600 px-5 py-3 font-bold text-white disabled:opacity-50"
                                       >
-                                        {respondingChange ===
-                                        relatedChange.id
-                                          ? t.saving
-                                          : t.reject}
+                                        {
+                                          respondingChange ===
+                                          relatedChange.id
+                                            ? t.saving
+                                            : t.reject
+                                        }
                                       </button>
                                     </div>
                                   </div>
@@ -3567,7 +3554,9 @@ export default function Home() {
             </div>
 
             <h3 className="mt-4 font-bold text-gray-800">
-              {t.kids}
+              {
+                t.kids
+              }
             </h3>
           </Link>
 
@@ -3597,7 +3586,9 @@ export default function Home() {
           <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-bold text-gray-800">
-                {t.products}
+                {
+                  t.products
+                }
               </h2>
 
               <p className="mt-2 text-sm text-gray-600">
@@ -3626,7 +3617,9 @@ export default function Home() {
               </div>
 
               <h3 className="mt-5 text-2xl font-bold text-gray-800">
-                {t.noProducts}
+                {
+                  t.noProducts
+                }
               </h3>
             </div>
           ) : (
@@ -3869,8 +3862,7 @@ export default function Home() {
                               <p className="font-bold text-gray-800">
                                 {
                                   t.quantity
-                                }
-                                :{" "}
+                                }:{" "}
                                 {
                                   item.quantity
                                 }
@@ -3879,8 +3871,7 @@ export default function Home() {
                               <p className="mt-2 text-sm font-semibold text-gray-700">
                                 {
                                   t.total
-                                }
-                                :{" "}
+                                }:{" "}
                                 {
                                   item.price *
                                   item.quantity
@@ -3934,8 +3925,7 @@ export default function Home() {
                           <p className="mt-3 text-sm font-semibold text-gray-700">
                             {
                               t.total
-                            }
-                            :{" "}
+                            }:{" "}
                             {
                               item.price *
                               item.quantity
@@ -4040,12 +4030,16 @@ export default function Home() {
 
               <div>
                 <label className="mb-2 block font-bold text-gray-800">
-                  {t.phone}
+                  {
+                    t.phone
+                  }
                 </label>
 
                 <input
                   type="tel"
-                  value={phone}
+                  value={
+                    phone
+                  }
                   onChange={(
                     e
                   ) =>
@@ -4087,7 +4081,9 @@ export default function Home() {
 
               <div>
                 <label className="mb-2 block font-bold text-gray-800">
-                  {t.notes}
+                  {
+                    t.notes
+                  }
                 </label>
 
                 <textarea
