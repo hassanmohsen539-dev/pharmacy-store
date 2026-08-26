@@ -3,14 +3,31 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import { useLanguage } from "../language-provider";
 
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [resetting, setResetting] = useState(false);
+  const {
+    language,
+    toggleLanguage,
+    dir,
+  } = useLanguage();
+
+  const isArabic =
+    language === "ar";
+
+  const [email, setEmail] =
+    useState("");
+
+  const [password, setPassword] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(false);
+
+  const [resetting, setResetting] =
+    useState(false);
 
   async function handleLogin(
     e: React.FormEvent<HTMLFormElement>
@@ -19,8 +36,11 @@ export default function LoginPage() {
 
     if (!email.trim() || !password) {
       alert(
-        "من فضلك اكتب البريد الإلكتروني وكلمة المرور"
+        isArabic
+          ? "من فضلك اكتب البريد الإلكتروني وكلمة المرور"
+          : "Please enter your email and password."
       );
+
       return;
     }
 
@@ -51,6 +71,7 @@ export default function LoginPage() {
         );
 
         alert(loginError.message);
+
         return;
       }
 
@@ -58,8 +79,11 @@ export default function LoginPage() {
       // نتأكد أن Supabase أعادت User + Session
       // =====================================================
 
-      const user = loginData.user;
-      const session = loginData.session;
+      const user =
+        loginData.user;
+
+      const session =
+        loginData.session;
 
       if (!user || !session) {
         console.error(
@@ -68,7 +92,9 @@ export default function LoginPage() {
         );
 
         alert(
-          "تم تسجيل الدخول ولكن لم يتم إنشاء جلسة للحساب."
+          isArabic
+            ? "تم تسجيل الدخول ولكن لم يتم إنشاء جلسة للحساب."
+            : "Login succeeded, but no session was created."
         );
 
         return;
@@ -88,7 +114,8 @@ export default function LoginPage() {
       // فحص صلاحية الحساب
       // =====================================================
 
-      let role: string | null = null;
+      let role: string | null =
+        null;
 
       try {
         const {
@@ -108,7 +135,8 @@ export default function LoginPage() {
           );
         } else {
           role =
-            profile?.role || null;
+            profile?.role ||
+            null;
         }
       } catch (error) {
         console.error(
@@ -123,7 +151,9 @@ export default function LoginPage() {
 
       if (role === "admin") {
         alert(
-          "تم تسجيل دخول الأدمن بنجاح 🎉"
+          isArabic
+            ? "تم تسجيل دخول الأدمن بنجاح 🎉"
+            : "Admin login successful 🎉"
         );
 
         router.replace(
@@ -134,7 +164,9 @@ export default function LoginPage() {
       }
 
       alert(
-        "تم تسجيل الدخول بنجاح 🎉"
+        isArabic
+          ? "تم تسجيل الدخول بنجاح 🎉"
+          : "Login successful 🎉"
       );
 
       router.replace("/");
@@ -145,7 +177,9 @@ export default function LoginPage() {
       );
 
       alert(
-        "حدث خطأ غير متوقع، حاول مرة أخرى."
+        isArabic
+          ? "حدث خطأ غير متوقع، حاول مرة أخرى."
+          : "An unexpected error occurred. Please try again."
       );
     } finally {
       setLoading(false);
@@ -166,7 +200,9 @@ export default function LoginPage() {
 
     if (!emailValue) {
       alert(
-        "اكتب البريد الإلكتروني أولاً، ثم اضغط نسيت كلمة المرور."
+        isArabic
+          ? "اكتب البريد الإلكتروني أولاً، ثم اضغط نسيت كلمة المرور."
+          : "Enter your email address first, then click Forgot password."
       );
 
       return;
@@ -195,15 +231,20 @@ export default function LoginPage() {
         );
 
         alert(
-          "تعذر إرسال رابط استعادة كلمة المرور:\n\n" +
-            error.message
+          isArabic
+            ? "تعذر إرسال رابط استعادة كلمة المرور:\n\n" +
+                error.message
+            : "Unable to send the password reset link:\n\n" +
+                error.message
         );
 
         return;
       }
 
       alert(
-        "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني 📩\n\nافتح البريد واضغط على الرابط لتعيين كلمة مرور جديدة."
+        isArabic
+          ? "تم إرسال رابط استعادة كلمة المرور إلى بريدك الإلكتروني 📩\n\nافتح البريد واضغط على الرابط لتعيين كلمة مرور جديدة."
+          : "A password reset link has been sent to your email 📩\n\nOpen your email and click the link to set a new password."
       );
     } catch (error) {
       console.error(
@@ -212,7 +253,9 @@ export default function LoginPage() {
       );
 
       alert(
-        "حدث خطأ غير متوقع أثناء إرسال رابط الاستعادة."
+        isArabic
+          ? "حدث خطأ غير متوقع أثناء إرسال رابط الاستعادة."
+          : "An unexpected error occurred while sending the reset link."
       );
     } finally {
       setResetting(false);
@@ -221,11 +264,32 @@ export default function LoginPage() {
 
   return (
     <main
-      dir="rtl"
-      className="flex min-h-screen items-center justify-center bg-gray-50 px-4 sm:px-6"
+      dir={dir}
+      className={`relative flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8 sm:px-6 ${
+        isArabic
+          ? "text-right"
+          : "text-left"
+      }`}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
+      {/* =====================================================
+          اختيار اللغة
+          ثابت دائمًا أعلى اليسار
+      ===================================================== */}
 
+      <div className="absolute left-4 top-4 sm:left-6 sm:top-6">
+        <button
+          type="button"
+          onClick={toggleLanguage}
+          className="rounded-xl border border-green-600 bg-white px-4 py-2 font-bold text-green-700 shadow-sm transition hover:bg-green-50"
+        >
+          🌐{" "}
+          {isArabic
+            ? "English"
+            : "العربية"}
+        </button>
+      </div>
+
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl sm:p-8">
         {/* الشعار */}
 
         <div className="mb-8 text-center">
@@ -234,11 +298,15 @@ export default function LoginPage() {
           </div>
 
           <h1 className="mt-5 text-3xl font-bold text-green-700">
-            صيدلية الشفاء
+            {isArabic
+              ? "صيدلية الشفاء"
+              : "Al Shifa Pharmacy"}
           </h1>
 
           <p className="mt-2 text-gray-500">
-            صحتك أولويتنا
+            {isArabic
+              ? "صحتك أولويتنا"
+              : "Your health is our priority"}
           </p>
         </div>
 
@@ -246,11 +314,15 @@ export default function LoginPage() {
 
         <div className="mb-6 text-center">
           <h2 className="text-2xl font-bold text-gray-800">
-            تسجيل الدخول
+            {isArabic
+              ? "تسجيل الدخول"
+              : "Login"}
           </h2>
 
           <p className="mt-2 text-gray-500">
-            سجل الدخول إلى حسابك
+            {isArabic
+              ? "سجل الدخول إلى حسابك"
+              : "Sign in to your account"}
           </p>
         </div>
 
@@ -264,7 +336,9 @@ export default function LoginPage() {
 
           <div>
             <label className="mb-2 block font-bold text-gray-700">
-              البريد الإلكتروني
+              {isArabic
+                ? "البريد الإلكتروني"
+                : "Email address"}
             </label>
 
             <input
@@ -281,7 +355,8 @@ export default function LoginPage() {
                 loading ||
                 resetting
               }
-              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-right text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
+              dir="ltr"
+              className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-left text-gray-900 placeholder-gray-400 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100 disabled:bg-gray-100"
             />
           </div>
 
@@ -290,7 +365,9 @@ export default function LoginPage() {
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
               <label className="block font-bold text-gray-700">
-                كلمة المرور
+                {isArabic
+                  ? "كلمة المرور"
+                  : "Password"}
               </label>
 
               <button
@@ -302,11 +379,15 @@ export default function LoginPage() {
                   loading ||
                   resetting
                 }
-                className="font-semibold text-sm text-green-600 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-sm font-semibold text-green-600 hover:text-green-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {resetting
-                  ? "جاري الإرسال..."
-                  : "نسيت كلمة المرور؟"}
+                  ? isArabic
+                    ? "جاري الإرسال..."
+                    : "Sending..."
+                  : isArabic
+                    ? "نسيت كلمة المرور؟"
+                    : "Forgot password?"}
               </button>
             </div>
 
@@ -318,7 +399,11 @@ export default function LoginPage() {
                   e.target.value
                 )
               }
-              placeholder="اكتب كلمة المرور"
+              placeholder={
+                isArabic
+                  ? "اكتب كلمة المرور"
+                  : "Enter your password"
+              }
               autoComplete="current-password"
               disabled={
                 loading ||
@@ -339,8 +424,12 @@ export default function LoginPage() {
             className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {loading
-              ? "جاري تسجيل الدخول..."
-              : "تسجيل الدخول 🔐"}
+              ? isArabic
+                ? "جاري تسجيل الدخول..."
+                : "Logging in..."
+              : isArabic
+                ? "تسجيل الدخول 🔐"
+                : "Login 🔐"}
           </button>
         </form>
 
@@ -348,14 +437,18 @@ export default function LoginPage() {
 
         <div className="mt-7 text-center">
           <p className="text-gray-500">
-            ليس لديك حساب؟
+            {isArabic
+              ? "ليس لديك حساب؟"
+              : "Don't have an account?"}
           </p>
 
           <a
             href="/register"
             className="mt-2 inline-block font-bold text-green-600 hover:text-green-700"
           >
-            إنشاء حساب جديد
+            {isArabic
+              ? "إنشاء حساب جديد"
+              : "Create a new account"}
           </a>
         </div>
 
@@ -366,7 +459,9 @@ export default function LoginPage() {
             href="/"
             className="font-semibold text-gray-500 hover:text-green-600"
           >
-            ← العودة إلى الصفحة الرئيسية
+            {isArabic
+              ? "← العودة إلى الصفحة الرئيسية"
+              : "← Back to home page"}
           </a>
         </div>
       </div>

@@ -111,11 +111,42 @@ export async function POST(
       );
     }
 
+    // =====================================================
+    // قراءة Body
+    // =====================================================
+
     const body =
       await request.json();
 
     const action =
       body?.action;
+
+    // =====================================================
+    // DEBUG
+    // =====================================================
+
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "CUSTOMER ORDERS ACTION RECEIVED:",
+      JSON.stringify(action)
+    );
+
+    console.log(
+      "CUSTOMER ORDERS BODY:",
+      body
+    );
+
+    console.log(
+      "CUSTOMER ORDERS USER:",
+      user.id
+    );
+
+    console.log(
+      "========================================"
+    );
 
     // =====================================================
     // تحميل كل بيانات الطلبات
@@ -350,6 +381,501 @@ export async function POST(
     }
 
     // =====================================================
+    // تعديل كمية الطلب مباشرة بواسطة العميل
+    // =====================================================
+
+    if (
+      action ===
+      "update_order_item_quantity"
+    ) {
+      console.log(
+        "UPDATE ORDER ITEM QUANTITY ACTION STARTED"
+      );
+
+      const orderId =
+        Number(
+          body?.orderId
+        );
+
+      const orderItemId =
+        Number(
+          body?.orderItemId
+        );
+
+      const productId =
+        Number(
+          body?.productId
+        );
+
+      const newQuantity =
+        Number(
+          body?.quantity
+        );
+
+      if (
+        !orderId ||
+        Number.isNaN(
+          orderId
+        ) ||
+        !orderItemId ||
+        Number.isNaN(
+          orderItemId
+        ) ||
+        !productId ||
+        Number.isNaN(
+          productId
+        ) ||
+        !Number.isInteger(
+          newQuantity
+        ) ||
+        newQuantity < 1
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "بيانات تعديل الكمية غير صحيحة.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const {
+        data: order,
+        error:
+          orderError,
+      } =
+        await supabase
+          .from("orders")
+          .select(
+            "id,user_id,status"
+          )
+          .eq(
+            "id",
+            orderId
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle();
+
+      if (
+        orderError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              orderError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      if (!order) {
+        return NextResponse.json(
+          {
+            error:
+              "الطلب غير موجود أو لا يخص هذا الحساب.",
+          },
+          {
+            status: 403,
+          }
+        );
+      }
+
+      if (
+        order.status !==
+        "جديد"
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              'لا يمكن تعديل الكمية إلا عندما تكون حالة الطلب "جديد".',
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const {
+        data: pendingChange,
+        error:
+          pendingChangeError,
+      } =
+        await supabase
+          .from(
+            "order_quantity_changes"
+          )
+          .select("id")
+          .eq(
+            "order_item_id",
+            orderItemId
+          )
+          .eq(
+            "order_id",
+            orderId
+          )
+          .eq(
+            "status",
+            "pending"
+          )
+          .maybeSingle();
+
+      if (
+        pendingChangeError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              pendingChangeError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      if (
+        pendingChange
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "يوجد اقتراح كمية من الأدمن في انتظار الموافقة. تعامل معه أولًا.",
+          },
+          {
+            status: 409,
+          }
+        );
+      }
+
+      const {
+        data: orderItem,
+        error:
+          orderItemError,
+      } =
+        await supabase
+          .from(
+            "order_items"
+          )
+          .select(
+            "id,order_id,product_id,price,quantity"
+          )
+          .eq(
+            "id",
+            orderItemId
+          )
+          .eq(
+            "order_id",
+            orderId
+          )
+          .maybeSingle();
+
+      if (
+        orderItemError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              orderItemError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      if (!orderItem) {
+        return NextResponse.json(
+          {
+            error:
+              "المنتج غير موجود داخل هذا الطلب.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      if (
+        Number(
+          orderItem.product_id
+        ) !==
+        productId
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "بيانات المنتج غير متطابقة.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      const {
+        data: product,
+        error:
+          productError,
+      } =
+        await supabase
+          .from("products")
+          .select(
+            "id,stock"
+          )
+          .eq(
+            "id",
+            productId
+          )
+          .maybeSingle();
+
+      if (
+        productError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              productError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      if (!product) {
+        return NextResponse.json(
+          {
+            error:
+              "المنتج غير موجود.",
+          },
+          {
+            status: 404,
+          }
+        );
+      }
+
+      const currentStock =
+        Number(
+          product.stock
+        );
+
+      if (
+        newQuantity >
+        currentStock
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              `الكمية المطلوبة أكبر من المخزون الحالي. المتاح: ${currentStock}.`,
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+      if (
+        newQuantity ===
+        Number(
+          orderItem.quantity
+        )
+      ) {
+        return NextResponse.json({
+          success:
+            true,
+          quantity:
+            newQuantity,
+          message:
+            "الكمية بالفعل مساوية للقيمة الحالية.",
+        });
+      }
+
+      const {
+        error:
+          updateItemError,
+      } =
+        await supabase
+          .from(
+            "order_items"
+          )
+          .update({
+            quantity:
+              newQuantity,
+            approved_quantity:
+              newQuantity,
+            customer_approval:
+              null,
+            approval_message:
+              "تم تعديل الكمية مباشرة بواسطة العميل أثناء كون الطلب جديدًا.",
+          })
+          .eq(
+            "id",
+            orderItemId
+          )
+          .eq(
+            "order_id",
+            orderId
+          );
+
+      if (
+        updateItemError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              updateItemError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      const {
+        data: allItems,
+        error:
+          allItemsError,
+      } =
+        await supabase
+          .from(
+            "order_items"
+          )
+          .select(
+            "price,quantity"
+          )
+          .eq(
+            "order_id",
+            orderId
+          );
+
+      if (
+        allItemsError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              allItemsError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      const newTotal =
+        (
+          allItems ||
+          []
+        ).reduce(
+          (
+            sum,
+            item
+          ) =>
+            sum +
+            Number(
+              item.price
+            ) *
+              Number(
+                item.quantity
+              ),
+          0
+        );
+
+      const {
+        error:
+          totalError,
+      } =
+        await supabase
+          .from("orders")
+          .update({
+            total:
+              newTotal,
+          })
+          .eq(
+            "id",
+            orderId
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .eq(
+            "status",
+            "جديد"
+          );
+
+      if (
+        totalError
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              totalError.message,
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      try {
+        const {
+          error:
+            adminNotificationError,
+        } =
+          await supabase.rpc(
+            "notify_admin_quantity_response",
+            {
+              p_admin_user_id:
+                null,
+              p_order_id:
+                orderId,
+              p_order_item_id:
+                orderItemId,
+              p_approved:
+                true,
+              p_old_quantity:
+                Number(
+                  orderItem.quantity
+                ),
+              p_new_quantity:
+                newQuantity,
+            }
+          );
+
+        if (
+          adminNotificationError
+        ) {
+          console.error(
+            "CUSTOMER DIRECT QUANTITY ADMIN NOTIFICATION ERROR:",
+            adminNotificationError
+          );
+        }
+      } catch (error) {
+        console.error(
+          "CUSTOMER DIRECT QUANTITY NOTIFICATION EXCEPTION:",
+          error
+        );
+      }
+
+      return NextResponse.json({
+        success:
+          true,
+        quantity:
+          newQuantity,
+        total:
+          newTotal,
+      });
+    }
+
+    // =====================================================
     // إلغاء الطلب
     // =====================================================
 
@@ -368,16 +894,86 @@ export async function POST(
           orderId
         )
       ) {
-        return NextResponse.json(
-          {
-            error:
-              "رقم الطلب غير صالح.",
-          },
-          {
-            status: 400,
-          }
-        );
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            "رقم الطلب غير صالح.",
+        });
       }
+
+      // =====================================================
+      // قراءة الطلب أولًا
+      // =====================================================
+
+      const {
+        data: currentOrder,
+        error:
+          currentOrderError,
+      } =
+        await supabase
+          .from("orders")
+          .select(
+            "id,user_id,status"
+          )
+          .eq(
+            "id",
+            orderId
+          )
+          .eq(
+            "user_id",
+            user.id
+          )
+          .maybeSingle();
+
+      if (
+        currentOrderError
+      ) {
+        console.error(
+          "CANCEL ORDER LOAD ERROR:",
+          currentOrderError
+        );
+
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            "حدث خطأ أثناء التحقق من الطلب.",
+        });
+      }
+
+      if (!currentOrder) {
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            "الطلب غير موجود أو لا يخص حسابك.",
+        });
+      }
+
+      // =====================================================
+      // التحقق من الحالة
+      // =====================================================
+
+      if (
+        currentOrder.status !==
+          "جديد" &&
+        currentOrder.status !==
+          "pending"
+      ) {
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            `لا يمكن إلغاء الطلب الآن لأن حالته الحالية هي "${currentOrder.status}".`,
+          status:
+            currentOrder.status,
+        });
+      }
+
+      // =====================================================
+      // تنفيذ الإلغاء
+      // =====================================================
 
       const {
         data,
@@ -397,12 +993,9 @@ export async function POST(
             "user_id",
             user.id
           )
-          .in(
+          .eq(
             "status",
-            [
-              "جديد",
-              "pending",
-            ]
+            currentOrder.status
           )
           .select(
             "id,status"
@@ -410,39 +1003,40 @@ export async function POST(
           .maybeSingle();
 
       if (error) {
-        return NextResponse.json(
-          {
-            error:
-              error.message,
-          },
-          {
-            status: 500,
-          }
+        console.error(
+          "CANCEL ORDER UPDATE ERROR:",
+          error
         );
+
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            "حدث خطأ أثناء إلغاء الطلب. حاول مرة أخرى.",
+        });
       }
 
       if (!data) {
-        return NextResponse.json(
-          {
-            error:
-              "لا يمكن إلغاء هذا الطلب الآن، ربما تم تغيير حالته بالفعل.",
-          },
-          {
-            status: 400,
-          }
-        );
+        return NextResponse.json({
+          success:
+            false,
+          message:
+            "تعذر إلغاء الطلب لأن حالته تغيرت بالفعل.",
+        });
       }
 
       return NextResponse.json({
         success:
           true,
+        message:
+          "تم إلغاء الطلب بنجاح ✅",
         order:
           data,
       });
     }
 
     // =====================================================
-    // الرد على تعديل الكمية
+    // الرد على تعديل الكمية من الأدمن
     // =====================================================
 
     if (
@@ -485,10 +1079,6 @@ export async function POST(
         );
       }
 
-      // =====================================================
-      // التأكد أن الطلب يخص المستخدم
-      // =====================================================
-
       const {
         data: order,
         error:
@@ -497,7 +1087,7 @@ export async function POST(
         await supabase
           .from("orders")
           .select(
-            "id,user_id"
+            "id,user_id,status"
           )
           .eq(
             "id",
@@ -523,10 +1113,6 @@ export async function POST(
           }
         );
       }
-
-      // =====================================================
-      // الحصول على التعديل الحالي
-      // =====================================================
 
       const {
         data: currentChange,
@@ -599,10 +1185,6 @@ export async function POST(
           ? `وافق العميل على تعديل الكمية إلى ${currentChange.new_quantity}.`
           : `رفض العميل تعديل الكمية، وتم الاحتفاظ بالكمية الأصلية ${currentChange.old_quantity}.`;
 
-      // =====================================================
-      // تحديث عنصر الطلب
-      // =====================================================
-
       const {
         error:
           itemError,
@@ -614,13 +1196,10 @@ export async function POST(
           .update({
             quantity:
               finalQuantity,
-
             approved_quantity:
               finalQuantity,
-
             customer_approval:
               newStatus,
-
             approval_message:
               approvalMessage,
           })
@@ -647,10 +1226,6 @@ export async function POST(
         );
       }
 
-      // =====================================================
-      // تحديث سجل تعديل الكمية
-      // =====================================================
-
       const responseTime =
         new Date().toISOString();
 
@@ -665,7 +1240,6 @@ export async function POST(
           .update({
             status:
               newStatus,
-
             customer_response_at:
               responseTime,
           })
@@ -691,10 +1265,6 @@ export async function POST(
           }
         );
       }
-
-      // =====================================================
-      // إعادة حساب إجمالي الطلب
-      // =====================================================
 
       const {
         data: allItems,
@@ -779,10 +1349,6 @@ export async function POST(
         );
       }
 
-      // =====================================================
-      // إشعار الأدمن
-      // =====================================================
-
       const ADMIN_USER_ID =
         "6b8e2f5d-0678-444f-994c-20f9a779a506";
 
@@ -795,19 +1361,14 @@ export async function POST(
           {
             p_admin_user_id:
               ADMIN_USER_ID,
-
             p_order_id:
               orderId,
-
             p_order_item_id:
               orderItemId,
-
             p_approved:
               approved,
-
             p_old_quantity:
               currentChange.old_quantity,
-
             p_new_quantity:
               currentChange.new_quantity,
           }
@@ -825,13 +1386,10 @@ export async function POST(
       return NextResponse.json({
         success:
           true,
-
         status:
           newStatus,
-
         quantity:
           finalQuantity,
-
         total:
           newTotal,
       });
@@ -905,10 +1463,21 @@ export async function POST(
       });
     }
 
+    // =====================================================
+    // Action غير معروف
+    // =====================================================
+
+    console.error(
+      "UNKNOWN CUSTOMER ACTION:",
+      JSON.stringify(action)
+    );
+
     return NextResponse.json(
       {
         error:
-          "Action غير معروف.",
+          `Action غير معروف: ${JSON.stringify(action)}`,
+        receivedAction:
+          action,
       },
       {
         status: 400,
